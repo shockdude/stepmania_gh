@@ -27,6 +27,9 @@ enum NotePart
 	NotePart_HoldTopCap, /**< The part representing a hold's top cap. */
 	NotePart_HoldBody, /**< The part representing a hold's body. */
 	NotePart_HoldBottomCap, /**< The part representing a hold's bottom cap. */
+   NotePart_Gem,  /**< The part representing a gem for guitar mode. */
+   NotePart_HOPO,  /**< The part representing a HOPO note. */
+   /** Other parts should reuse gem/hopo for head, then hold parts for sustains */
 	NUM_NotePart,
 	NotePart_Invalid
 };
@@ -272,6 +275,10 @@ private:
 	NoteColorSprite		m_HoldBody[NUM_HoldType][NUM_ActiveType];
 	NoteColorSprite		m_HoldBottomCap[NUM_HoldType][NUM_ActiveType];
 	NoteColorActor		m_HoldTail[NUM_HoldType][NUM_ActiveType];
+   NoteColorActor    m_TapGem;
+   NoteColorActor    m_TapHOPO;
+   NoteColorActor    m_GemHold[NUM_HoldType][NUM_ActiveType];
+   NoteColorActor    m_HOPOHold[NUM_HoldType][NUM_ActiveType];
 	float			m_fYReverseOffsetPixels;
 };
 

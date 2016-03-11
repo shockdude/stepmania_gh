@@ -336,6 +336,11 @@ void NoteDataWithScoring::GetActualRadarValues(const NoteData &in,
 					// make sense to count HoldTails as hittable notes. -Kyz
 				case TapNoteType_Attack:
 				case TapNoteType_Lift:
+               // adding for Guitar stuff
+            case TapNoteType_Gem:
+            case TapNoteType_HOPO:
+            case TapNoteType_GemHold:
+            case TapNoteType_HOPOHold:
 					UpdateHittable(state.curr_row, first_hittable_row, last_hittable_row);
 					++state.num_notes_on_curr_row;
 					state.notes_hit_for_stream+= (curr_note->result.tns >= state.stream_tns);
@@ -349,7 +354,8 @@ void NoteDataWithScoring::GetActualRadarValues(const NoteData &in,
 						state.last_time_on_row= curr_note->result.fTapNoteOffset;
 						state.last_tns_on_row= curr_note->result.tns;
 					}
-					if(curr_note->type == TapNoteType_HoldHead)
+					if(curr_note->type == TapNoteType_HoldHead || curr_note->type == TapNoteType_HOPOHold ||
+                  curr_note->type == TapNoteType_GemHold )
 					{
 						if(curr_note->subType == TapNoteSubType_Hold)
 						{

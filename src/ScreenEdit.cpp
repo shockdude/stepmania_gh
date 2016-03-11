@@ -2187,27 +2187,49 @@ bool ScreenEdit::InputEdit( const InputEventPlus &input, EditButton EditB )
 			
 	case EDIT_BUTTON_CYCLE_TAP_LEFT:
 		{
-			switch ( m_selectedTap.type )
-			{
-				case TapNoteType_Tap:	m_selectedTap = TAP_ORIGINAL_FAKE;	break;
-				case TapNoteType_Mine:	m_selectedTap = TAP_ORIGINAL_TAP;	break;
-				case TapNoteType_Lift:	m_selectedTap = TAP_ORIGINAL_MINE;	break;
-				case TapNoteType_Fake:	m_selectedTap = TAP_ORIGINAL_LIFT;	break;
-				DEFAULT_FAIL( m_selectedTap.type );
-			}
-			return true;
+         if( GAMESTATE && !strcmp(GAMESTATE->GetCurrentGame()->m_szName, "guitar") ) {
+            switch ( m_selectedTap.type )
+            {
+               case TapNoteType_Tap:	m_selectedTap = TAP_ORIGINAL_HOPO;	break;
+               case TapNoteType_Gem:   m_selectedTap = TAP_ORIGINAL_TAP;	break;
+               case TapNoteType_HOPO:   m_selectedTap = TAP_ORIGINAL_GEM;   break;
+                  DEFAULT_FAIL( m_selectedTap.type );
+            }
+            return true;
+         } else {
+            switch ( m_selectedTap.type )
+            {
+               case TapNoteType_Tap:	m_selectedTap = TAP_ORIGINAL_FAKE;	break;
+               case TapNoteType_Mine:	m_selectedTap = TAP_ORIGINAL_TAP;	break;
+               case TapNoteType_Lift:	m_selectedTap = TAP_ORIGINAL_MINE;	break;
+               case TapNoteType_Fake:	m_selectedTap = TAP_ORIGINAL_LIFT;	break;
+                  DEFAULT_FAIL( m_selectedTap.type );
+            }
+            return true;
+         }
 		}
 	case EDIT_BUTTON_CYCLE_TAP_RIGHT:
 		{
-			switch ( m_selectedTap.type )
-			{
-				case TapNoteType_Tap:	m_selectedTap = TAP_ORIGINAL_MINE;	break;
-				case TapNoteType_Mine:	m_selectedTap = TAP_ORIGINAL_LIFT;	break;
-				case TapNoteType_Lift:	m_selectedTap = TAP_ORIGINAL_FAKE;	break;
-				case TapNoteType_Fake:	m_selectedTap = TAP_ORIGINAL_TAP;	break;
-				DEFAULT_FAIL( m_selectedTap.type );
-			}
-			return true;
+         if( GAMESTATE && !strcmp(GAMESTATE->GetCurrentGame()->m_szName, "guitar") ) {
+            switch ( m_selectedTap.type )
+            {
+               case TapNoteType_Tap:	m_selectedTap = TAP_ORIGINAL_GEM;	break;
+               case TapNoteType_Gem:   m_selectedTap = TAP_ORIGINAL_HOPO;   break;
+               case TapNoteType_HOPO:   m_selectedTap = TAP_ORIGINAL_TAP;   break;
+                  DEFAULT_FAIL( m_selectedTap.type );
+            }
+            return true;
+         } else {
+            switch ( m_selectedTap.type )
+            {
+               case TapNoteType_Tap:	m_selectedTap = TAP_ORIGINAL_MINE;	break;
+               case TapNoteType_Mine:	m_selectedTap = TAP_ORIGINAL_LIFT;	break;
+               case TapNoteType_Lift:	m_selectedTap = TAP_ORIGINAL_FAKE;	break;
+               case TapNoteType_Fake:	m_selectedTap = TAP_ORIGINAL_TAP;	break;
+                  DEFAULT_FAIL( m_selectedTap.type );
+            }
+            return true;
+         }
 		}
 	case EDIT_BUTTON_CYCLE_SEGMENT_LEFT:
 	{
@@ -3535,6 +3557,12 @@ void ScreenEdit::ScrollTo( float fDestinationBeat )
 		// that the user made.  Dragging the hold bigger can only absorb and remove
 		// other taps, so dragging won't cause us to exceed the note limit.
 		TapNote tn = EditIsBeingPressed(EDIT_BUTTON_LAY_ROLL) ? TAP_ORIGINAL_ROLL_HEAD : TAP_ORIGINAL_HOLD_HEAD;
+      
+      // Adding held Gem and HOPO notes in edit mode
+      if(m_selectedTap == TAP_ORIGINAL_GEM)
+         tn = TAP_ORIGINAL_GEM_HOLD;
+      else if(m_selectedTap == TAP_ORIGINAL_HOPO)
+         tn = TAP_ORIGINAL_HOPO_HOLD;
 
 		tn.pn = m_InputPlayerNumber;
 		m_NoteDataEdit.AddHoldNote( iCol, iStartRow, iEndRow, tn );

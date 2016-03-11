@@ -91,7 +91,8 @@ void NoteData::ClearRangeForTrack( int rowBegin, int rowEnd, int iTrack )
 		--prev;
 		TapNote tn = prev->second;
 		int iRow = prev->first;
-		if( tn.type == TapNoteType_HoldHead && iRow + tn.iDuration > rowEnd )
+      if( (tn.type == TapNoteType_HoldHead || tn.type == TapNoteType_GemHold ||
+           tn.type == TapNoteType_HOPOHold) && iRow + tn.iDuration > rowEnd )
 		{
 			// A hold note overlaps the end of the range.  Separate it.
 			SetTapNote( iTrack, iRow, TAP_EMPTY );
@@ -147,7 +148,8 @@ void NoteData::CopyRange( const NoteData& from, int rowFromBegin, int rowFromEnd
 			if( head.type == TapNoteType_Empty )
 				continue;
 
-			if( head.type == TapNoteType_HoldHead )
+         if( head.type == TapNoteType_HoldHead || head.type == TapNoteType_GemHold ||
+            head.type == TapNoteType_HOPOHold )
 			{
 				int iStartRow = lBegin->first + iMoveBy;
 				int iEndRow = iStartRow + head.iDuration;
@@ -251,7 +253,8 @@ int NoteData::GetNumTracksWithTap( int row ) const
 	for( int t=0; t<GetNumTracks(); t++ )
 	{
 		const TapNote &tn = GetTapNote( t, row );
-		if( tn.type == TapNoteType_Tap || tn.type == TapNoteType_Lift )
+      if( tn.type == TapNoteType_Tap || tn.type == TapNoteType_Lift ||
+         tn.type == TapNoteType_Gem || tn.type == TapNoteType_HOPO )
 			iNum++;
 	}
 	return iNum;
@@ -263,7 +266,9 @@ int NoteData::GetNumTracksWithTapOrHoldHead( int row ) const
 	for( int t=0; t<GetNumTracks(); t++ )
 	{
 		const TapNote &tn = GetTapNote( t, row );
-		if( tn.type == TapNoteType_Tap || tn.type == TapNoteType_Lift || tn.type == TapNoteType_HoldHead )
+      if( tn.type == TapNoteType_Tap || tn.type == TapNoteType_Lift || tn.type == TapNoteType_HoldHead ||
+         tn.type == TapNoteType_Gem || tn.type == TapNoteType_HOPO || tn.type == TapNoteType_GemHold ||
+         tn.type == TapNoteType_HOPOHold )
 			iNum++;
 	}
 	return iNum;
@@ -274,7 +279,8 @@ int NoteData::GetFirstTrackWithTap( int row ) const
 	for( int t=0; t<GetNumTracks(); t++ )
 	{
 		const TapNote &tn = GetTapNote( t, row );
-		if( tn.type == TapNoteType_Tap || tn.type == TapNoteType_Lift )
+      if( tn.type == TapNoteType_Tap || tn.type == TapNoteType_Lift ||
+         tn.type == TapNoteType_Gem || tn.type == TapNoteType_HOPO )
 			return t;
 	}
 	return -1;
@@ -285,7 +291,9 @@ int NoteData::GetFirstTrackWithTapOrHoldHead( int row ) const
 	for( int t=0; t<GetNumTracks(); t++ )
 	{
 		const TapNote &tn = GetTapNote( t, row );
-		if( tn.type == TapNoteType_Tap || tn.type == TapNoteType_Lift || tn.type == TapNoteType_HoldHead )
+      if( tn.type == TapNoteType_Tap || tn.type == TapNoteType_Lift || tn.type == TapNoteType_HoldHead ||
+         tn.type == TapNoteType_Gem || tn.type == TapNoteType_HOPO || tn.type == TapNoteType_GemHold ||
+         tn.type == TapNoteType_HOPOHold )
 			return t;
 	}
 	return -1;
@@ -296,7 +304,9 @@ int NoteData::GetLastTrackWithTapOrHoldHead( int row ) const
 	for( int t=GetNumTracks()-1; t>=0; t-- )
 	{
 		const TapNote &tn = GetTapNote( t, row );
-		if( tn.type == TapNoteType_Tap || tn.type == TapNoteType_Lift || tn.type == TapNoteType_HoldHead )
+      if( tn.type == TapNoteType_Tap || tn.type == TapNoteType_Lift || tn.type == TapNoteType_HoldHead ||
+         tn.type == TapNoteType_Gem || tn.type == TapNoteType_HOPO || tn.type == TapNoteType_GemHold ||
+         tn.type == TapNoteType_HOPOHold )
 			return t;
 	}
 	return -1;
@@ -316,7 +326,8 @@ void NoteData::AddHoldNote( int iTrack, int iStartRow, int iEndRow, TapNote tn )
 	{
 		int iOtherRow = it->first;
 		const TapNote &tnOther = it->second;
-		if( tnOther.type == TapNoteType_HoldHead )
+      if( tnOther.type == TapNoteType_HoldHead || tnOther.type == TapNoteType_GemHold ||
+         tnOther.type == TapNoteType_HOPOHold )
 		{
 			iStartRow = min( iStartRow, iOtherRow );
 			iEndRow = max( iEndRow, iOtherRow + tnOther.iDuration );
@@ -349,7 +360,8 @@ void NoteData::AddHoldNote( int iTrack, int iStartRow, int iEndRow, TapNote tn )
 bool NoteData::IsHoldHeadOrBodyAtRow( int iTrack, int iRow, int *pHeadRow ) const
 {
 	const TapNote &tn = GetTapNote( iTrack, iRow );
-	if( tn.type == TapNoteType_HoldHead )
+   if( tn.type == TapNoteType_HoldHead || tn.type == TapNoteType_GemHold ||
+      tn.type == TapNoteType_HOPOHold )
 	{
 		if( pHeadRow != NULL )
 			*pHeadRow = iRow;
@@ -378,6 +390,8 @@ bool NoteData::IsHoldNoteAtRow( int iTrack, int iRow, int *pHeadRow ) const
 		switch( tn.type )
 		{
 		case TapNoteType_HoldHead:
+      case TapNoteType_GemHold:
+      case TapNoteType_HOPOHold:
 			if( tn.iDuration + r < iRow )
 				return false;
 			*pHeadRow = r;
@@ -388,6 +402,8 @@ bool NoteData::IsHoldNoteAtRow( int iTrack, int iRow, int *pHeadRow ) const
 		case TapNoteType_Attack:
 		case TapNoteType_Lift:
 		case TapNoteType_Fake:
+      case TapNoteType_HOPO:
+      case TapNoteType_Gem:
 			return false;
 
 		case TapNoteType_Empty:
@@ -450,7 +466,7 @@ int NoteData::GetLastRow() const
 		/* XXX: We might have a hold note near the end with autoplay sounds
 		 * after it.  Do something else with autoplay sounds ... */
 		const TapNote &tn = GetTapNote( t, iRow );
-		if( tn.type == TapNoteType_HoldHead )
+		if( tn.type == TapNoteType_HoldHead || tn.type == TapNoteType_GemHold || tn.type == TapNoteType_HOPOHold )
 			iRow += tn.iDuration;
 
 		iOldestRowFoundSoFar = max( iOldestRowFoundSoFar, iRow );
@@ -1048,7 +1064,8 @@ void NoteData::GetTapNoteRangeInclusive( int iTrack, int iStartRow, int iEndRow,
 		iterator prev = Decrement(lBegin);
 
 		const TapNote &tn = prev->second;
-		if( tn.type == TapNoteType_HoldHead )
+      if( tn.type == TapNoteType_HoldHead || tn.type == TapNoteType_GemHold ||
+         tn.type == TapNoteType_HOPOHold )
 		{
 			int iHoldStartRow = prev->first;
 			int iHoldEndRow = iHoldStartRow + tn.iDuration;
@@ -1067,7 +1084,8 @@ void NoteData::GetTapNoteRangeInclusive( int iTrack, int iStartRow, int iEndRow,
 		// Include the next note if it's a hold and starts on iEndRow.
 		const TapNote &tn = lEnd->second;
 		int iHoldStartRow = lEnd->first;
-		if( tn.type == TapNoteType_HoldHead && iHoldStartRow == iEndRow )
+      if( (tn.type == TapNoteType_HoldHead || tn.type == TapNoteType_GemHold ||
+         tn.type == TapNoteType_HOPOHold ) && iHoldStartRow == iEndRow )
 			++lEnd;
 	}
 }
@@ -1081,7 +1099,8 @@ void NoteData::GetTapNoteRangeExclusive( int iTrack, int iStartRow, int iEndRow,
 	{
 		iterator prev = lEnd;
 		--prev;
-		if( prev->second.type == TapNoteType_HoldHead )
+      if( prev->second.type == TapNoteType_HoldHead || prev->second.type == TapNoteType_HOPOHold ||
+         prev->second.type == TapNoteType_GemHold )
 		{
 			int localStartRow = prev->first;
 			const TapNote &tn = prev->second;

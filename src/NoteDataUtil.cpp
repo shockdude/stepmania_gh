@@ -159,6 +159,17 @@ static void LoadFromSMNoteDataStringWithPlayer( NoteData& out, const RString &sS
 				case 'L': tn = TAP_ORIGINAL_LIFT;			break;
 				case 'F': tn = TAP_ORIGINAL_FAKE;			break;
 				// case 'I': tn = TAP_ORIGINAL_ITEM;			break;
+            // Guitar notetypes here:
+            case 'G': tn = TAP_ORIGINAL_GEM;       break;
+            case 'H': tn = TAP_ORIGINAL_HOPO;       break;
+            case 'S':
+               tn = TAP_ORIGINAL_GEM_HOLD;
+               tn.iDuration = MAX_NOTE_ROW;
+               break;
+            case 'O':
+               tn = TAP_ORIGINAL_HOPO_HOLD;
+               tn.iDuration = MAX_NOTE_ROW;
+               break;
 				default: 
 					/* Invalid data. We don't want to assert, since there might
 					 * simply be invalid data in an .SM, and we don't want to die
@@ -251,7 +262,8 @@ static void LoadFromSMNoteDataStringWithPlayer( NoteData& out, const RString &sS
 		{
 			NoteData::iterator next = Increment( begin );
 			const TapNote &tn = begin->second;
-			if( tn.type == TapNoteType_HoldHead && tn.iDuration == MAX_NOTE_ROW )
+         if( (tn.type == TapNoteType_HoldHead || tn.type == TapNoteType_HOPOHold ||
+              tn.type == TapNoteType_GemHold) && tn.iDuration == MAX_NOTE_ROW )
 			{
 				int iRow = begin->first;
 				LOG->UserLog( "", "", "While loading .sm/.ssc note data, there was an unmatched 2 at beat %f", NoteRowToBeat(iRow) );
@@ -325,7 +337,7 @@ void NoteDataUtil::InsertHoldTails( NoteData &inout )
 		{
 			int iRow = begin->first;
 			const TapNote &tn = begin->second;
-			if( tn.type != TapNoteType_HoldHead )
+			if( tn.type != TapNoteType_HoldHead && tn.type != TapNoteType_GemHold && tn.type != TapNoteType_HOPOHold )
 				continue;
 
 			TapNote tail = tn;
@@ -405,6 +417,10 @@ void NoteDataUtil::GetSMNoteDataString( const NoteData &in, RString &sRet )
 					case TapNoteType_AutoKeysound:	c = 'K'; break;
 					case TapNoteType_Lift:			c = 'L'; break;
 					case TapNoteType_Fake:			c = 'F'; break;
+               case TapNoteType_Gem:         c = 'G'; break;
+               case TapNoteType_HOPO:        c = 'H'; break;
+               case TapNoteType_GemHold:        c = 'S'; break;
+               case TapNoteType_HOPOHold:       c = 'O'; break;
 					default: 
 						c = '\0';
 						FAIL_M(ssprintf("Invalid tap note type: %i", tn.type));
@@ -482,7 +498,8 @@ void NoteDataUtil::CombineCompositeNoteData( NoteData &out, const vector<NoteDat
 				int row = i->first;
 				if( out.IsHoldNoteAtRow(track, i->first) )
 					continue;
-				if( i->second.type == TapNoteType_HoldHead )
+            if( i->second.type == TapNoteType_HoldHead || i->second.type == TapNoteType_HOPOHold ||
+               i->second.type == TapNoteType_GemHold )
 					out.AddHoldNote( track, row, row + i->second.iDuration, i->second );
 				else
 					out.SetTapNote( track, row, i->second );
@@ -630,7 +647,8 @@ void NoteDataUtil::LoadOverlapped( const NoteData &in, NoteData &out, int iNewNu
 
 			// If this is a hold note, find the end.
 			int iEndIndex = row;
-			if( tnFrom.type == TapNoteType_HoldHead )
+         if( tnFrom.type == TapNoteType_HoldHead || tnFrom.type == TapNoteType_HOPOHold ||
+            tnFrom.type == TapNoteType_GemHold )
 				iEndIndex = row + tnFrom.iDuration;
 
 			int &iTrackTo = DestRow[iTrackFrom];
@@ -661,7 +679,8 @@ void NoteDataUtil::LoadOverlapped( const NoteData &in, NoteData &out, int iNewNu
 			LastSourceTrack[iTrackTo] = iTrackFrom;
 			LastSourceRow[iTrackTo] = iEndIndex;
 			out.SetTapNote( iTrackTo, row, tnFrom );
-			if( tnFrom.type == TapNoteType_HoldHead )
+         if( tnFrom.type == TapNoteType_HoldHead || tnFrom.type == TapNoteType_HOPOHold ||
+            tnFrom.type == TapNoteType_GemHold )
 			{
 				const TapNote &tnTail = in.GetTapNote( iTrackFrom, iEndIndex );
 				out.SetTapNote( iTrackTo, iEndIndex, tnTail );
@@ -687,7 +706,8 @@ int FindLongestOverlappingHoldNoteForAnyTrack( const NoteData &in, int iRow )
 	for( int t=0; t<in.GetNumTracks(); t++ )
 	{
 		const TapNote &tn = in.GetTapNote( t, iRow );
-		if( tn.type == TapNoteType_HoldHead )
+      if( tn.type == TapNoteType_HoldHead || tn.type == TapNoteType_HOPOHold ||
+         tn.type == TapNoteType_GemHold )
 			iMaxTailRow = max( iMaxTailRow, iRow + tn.iDuration );
 	}
 
@@ -1069,6 +1089,11 @@ void NoteDataUtil::CalculateRadarValues( const NoteData &in, float fSongSeconds,
 					// HoldTails and Attacks are counted by IsTap.  But it doesn't
 					// make sense to count HoldTails as hittable notes. -Kyz
 				case TapNoteType_Attack:
+               // Guitar notes here
+            case TapNoteType_Gem:
+            case TapNoteType_HOPO:
+            case TapNoteType_GemHold:
+            case TapNoteType_HOPOHold:
 					++out[RadarCategory_Notes];
 					++state.num_notes_on_curr_row;
 					++total_taps;
@@ -1090,7 +1115,8 @@ void NoteDataUtil::CalculateRadarValues( const NoteData &in, float fSongSeconds,
 						default:
 							break;
 					}
-					if(curr_note->type == TapNoteType_HoldHead)
+               if(curr_note->type == TapNoteType_HoldHead || curr_note->type == TapNoteType_HOPOHold ||
+                  curr_note->type == TapNoteType_GemHold)
 					{
 						state.hold_ends.push_back(curr_row + curr_note->iDuration);
 						++state.num_holds_on_curr_row;
@@ -1866,12 +1892,16 @@ static void SuperShuffleTaps( NoteData &inout, int iStartIndex, int iEndIndex )
 			case TapNoteType_HoldHead:
 			case TapNoteType_HoldTail:
 			case TapNoteType_AutoKeysound:
+         case TapNoteType_HOPOHold:
+         case TapNoteType_GemHold:
 				continue;	// skip
 			case TapNoteType_Tap:
 			case TapNoteType_Mine:
 			case TapNoteType_Attack:
 			case TapNoteType_Lift:
 			case TapNoteType_Fake:
+         case TapNoteType_Gem:
+         case TapNoteType_HOPO:
 				break;	// shuffle this
 			DEFAULT_FAIL( tn1.type );
 			}
@@ -1897,6 +1927,8 @@ static void SuperShuffleTaps( NoteData &inout, int iStartIndex, int iEndIndex )
 				case TapNoteType_HoldHead:
 				case TapNoteType_HoldTail:
 				case TapNoteType_AutoKeysound:
+            case TapNoteType_HOPOHold:
+            case TapNoteType_GemHold:
 					continue;	// don't swap with these
 				case TapNoteType_Empty:
 				case TapNoteType_Tap:
@@ -1904,6 +1936,8 @@ static void SuperShuffleTaps( NoteData &inout, int iStartIndex, int iEndIndex )
 				case TapNoteType_Attack:
 				case TapNoteType_Lift:
 				case TapNoteType_Fake:
+            case TapNoteType_Gem:
+            case TapNoteType_HOPO:
 					break;	// ok to swap with this
 				DEFAULT_FAIL( tn2.type );
 				}
@@ -2255,7 +2289,8 @@ void NoteDataUtil::AddMines( NoteData &inout, int iStartIndex, int iEndIndex )
 		FOREACH_NONEMPTY_ROW_IN_TRACK_RANGE( inout, iTrack, r, iStartIndex, iEndIndex )
 		{
 			const TapNote &tn = inout.GetTapNote( iTrack, r );
-			if( tn.type != TapNoteType_HoldHead )
+         if( tn.type != TapNoteType_HoldHead && tn.type != TapNoteType_HOPOHold &&
+            tn.type != TapNoteType_GemHold )
 				continue;
 
 			int iMineRow = r + tn.iDuration + BeatToNoteRow(0.5f);
@@ -3004,7 +3039,7 @@ bool NoteDataUtil::GetPrevEditorPosition( const NoteData& in, int &rowInOut )
 			continue;
 
 		const TapNote &tn = in.GetTapNote( t, iHeadRow );
-		if( tn.type != TapNoteType_HoldHead )
+		if( tn.type != TapNoteType_HoldHead && tn.type != TapNoteType_HOPOHold && tn.type != TapNoteType_GemHold )
 			continue;
 
 		int iEndRow = iHeadRow + tn.iDuration;

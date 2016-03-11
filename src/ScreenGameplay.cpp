@@ -2529,6 +2529,10 @@ bool ScreenGameplay::Input( const InputEventPlus &input )
 	int iCol = GAMESTATE->GetCurrentStyle(input.pn)->GameInputToColumn( input.GameI );
 
 	// Don't pass on any inputs to Player that aren't a press or a release.
+   /** for guitar mode, the button holds need to be passed as well.
+    * uncomment this if it breaks stuff in regular gameplay
+    * Well, turns out it breaks stuff, need to find another way...
+    */
 	switch( input.type )
 	{
 	case IET_FIRST_PRESS:

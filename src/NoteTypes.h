@@ -92,7 +92,13 @@ enum TapNoteType
 	TapNoteType_Lift,		/**< Lift your foot up when it crosses the target area. */
 	TapNoteType_Attack,		/**< Hitting this note causes an attack to take place. */
 	TapNoteType_AutoKeysound,	/**< A special sound is played when this note crosses the target area. */
-	TapNoteType_Fake,		/**< This arrow can't be scored for or against the player. */
+   // New notetypes for guitar mode, looks bad, but was worse originally -Mike
+   TapNoteType_Gem,     /**< Need a correct button combination and hit the strum button to hit this note. */
+   TapNoteType_HOPO,     /**< No strumming needed if you hit the last note (but strumming is accepted) */
+   TapNoteType_GemHold, /**< Start of a hold note that's evaluated like a Gem */
+   TapNoteType_HOPOHold, /**< Start of a held note that is initiated like a hammer-on */
+   // Fake has to be at the bottom or else the game won't start. What a dumb way of handling that.
+   TapNoteType_Fake,		/**< This arrow can't be scored for or against the player. */
 	NUM_TapNoteType,
 	TapNoteType_Invalid
 };
@@ -223,6 +229,10 @@ extern TapNote TAP_ORIGINAL_LIFT;		// 'L'
 extern TapNote TAP_ORIGINAL_ATTACK;		// 'A'
 extern TapNote TAP_ORIGINAL_AUTO_KEYSOUND;	// 'K'
 extern TapNote TAP_ORIGINAL_FAKE;		// 'F'
+extern TapNote TAP_ORIGINAL_GEM;    // 'G'
+extern TapNote TAP_ORIGINAL_HOPO;    // 'H'
+extern TapNote TAP_ORIGINAL_GEM_HOLD;      // 'S'
+extern TapNote TAP_ORIGINAL_HOPO_HOLD;     // 'O'
 //extern TapNote TAP_ORIGINAL_MINE_HEAD;	// 'N' (tentative, we'll see when iDance gets ripped.)
 extern TapNote TAP_ADDITION_TAP;
 extern TapNote TAP_ADDITION_MINE;
