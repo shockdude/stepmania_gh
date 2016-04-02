@@ -1118,7 +1118,6 @@ bool BMSChartReader::ReadNoteData()
 	TimingData td;
 
 	td.m_fBeat0OffsetInSeconds = out->m_Timing.m_fBeat0OffsetInSeconds;
-	
 	nd.SetNumTracks( tracks );
 	td.SetBPMAtRow( 0, currentBPM = initialBPM );
 
@@ -1456,9 +1455,9 @@ bool BMSChartReader::ReadNoteData()
 		}
 	}
 
-	delete transform;
-	delete holdStart;
-	delete lastNote;
+	delete[] transform;
+	delete[] holdStart;
+	delete[] lastNote;
 
 	td.TidyUpData( false );
 	out->SetNoteData(nd);

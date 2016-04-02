@@ -386,6 +386,7 @@
 			<Function name='getaux'/>
 			<Function name='geteffectmagnitude'/>
 			<Function name='getrotation'/>
+			<Function name='get_tween_uses_effect_delta'/>
 			<Function name='glow'/>
 			<Function name='glowblink'/>
 			<Function name='glowramp'/>
@@ -418,6 +419,7 @@
 			<Function name='scaletofit'/>
 			<Function name='setsize'/>
 			<Function name='setstate'/>
+			<Function name='set_tween_uses_effect_delta'/>
 			<Function name='shadowcolor'/>
 			<Function name='shadowlength'/>
 			<Function name='shadowlengthx'/>
@@ -1353,6 +1355,7 @@
 			<Function name='GetProfile'/>
 			<Function name='GetProfileDir'/>
 			<Function name='GetSongNumTimesPlayed'/>
+			<Function name='GetStatsPrefix'/>
 			<Function name='IsPersistentProfile'/>
 			<Function name='IsSongNew'/>
 			<Function name='LastLoadWasTamperedOrCorrupt'/>
@@ -1362,6 +1365,7 @@
 			<Function name='SaveLocalProfile'/>
 			<Function name='SaveMachineProfile'/>
 			<Function name='SaveProfile'/>
+			<Function name='SetStatsPrefix'/>
 		</Class>
 		<Class name='RadarValues'>
 			<Function name='GetValue'/>

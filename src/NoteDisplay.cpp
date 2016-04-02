@@ -362,6 +362,8 @@ void NoteColumnRenderArgs::spae_pos_for_beat(const PlayerState* player_state,
 		case NCSM_Position:
 			pos_handler->EvalForBeat(song_beat, beat, sp_pos);
 			break;
+		default:
+			break;
 	}
 }
 void NoteColumnRenderArgs::spae_zoom_for_beat(const PlayerState* state, float beat,
@@ -378,6 +380,8 @@ void NoteColumnRenderArgs::spae_zoom_for_beat(const PlayerState* state, float be
 			break;
 		case NCSM_Position:
 			zoom_handler->EvalForBeat(song_beat, beat, sp_zoom);
+			break;
+		default:
 			break;
 	}
 }
@@ -901,6 +905,8 @@ void NoteDisplay::DrawHoldPart(vector<Sprite*> &vpSpr,
 				column_args.pos_handler->EvalDerivForBeat(column_args.song_beat, cur_beat, sp_pos_forward);
 				RageVec3Normalize(&sp_pos_forward, &sp_pos_forward);
 				break;
+			default:
+				break;
 		}
 
 		render_forward.x+= sp_pos_forward.x;
@@ -926,6 +932,8 @@ void NoteDisplay::DrawHoldPart(vector<Sprite*> &vpSpr,
 				column_args.zoom_handler->EvalForBeat(column_args.song_beat, cur_beat, sp_zoom);
 				render_width= fFrameWidth * sp_zoom.x;
 				break;
+			default:
+				break;
 		}
 
 		const float fFrameWidthScale	= ArrowEffects::GetFrameWidthScale(m_pPlayerState, fYOffset, part_args.overlapped_time);
@@ -945,6 +953,8 @@ void NoteDisplay::DrawHoldPart(vector<Sprite*> &vpSpr,
 				break;
 			case NCSM_Position:
 				column_args.rot_handler->EvalForBeat(column_args.song_beat, cur_beat, sp_rot);
+				break;
+			default:
 				break;
 		}
 
@@ -1316,6 +1326,8 @@ void NoteDisplay::DrawActor(const TapNote& tn, Actor* pActor, NotePart part,
 		case NCSM_Position:
 			column_args.rot_handler->EvalForBeat(column_args.song_beat, spline_beat, sp_rot);
 			break;
+		default:
+			break;
 	}
 	column_args.spae_zoom_for_beat(m_pPlayerState, spline_beat, sp_zoom, ae_zoom);
 	column_args.SetPRZForActor(pActor, sp_pos, ae_pos, sp_rot, ae_rot, sp_zoom, ae_zoom);
@@ -1477,6 +1489,8 @@ void NoteColumnRenderer::UpdateReceptorGhostStuff(Actor* receptor) const
 		case NCSM_Position:
 			NCR_current.m_pos_handler.EvalForReceptor(song_beat, sp_pos);
 			break;
+		default:
+			break;
 	}
 	switch(NCR_current.m_rot_handler.m_spline_mode)
 	{
@@ -1490,6 +1504,8 @@ void NoteColumnRenderer::UpdateReceptorGhostStuff(Actor* receptor) const
 		case NCSM_Position:
 			NCR_current.m_rot_handler.EvalForReceptor(song_beat, sp_rot);
 			break;
+		default:
+			break;
 	}
 	switch(NCR_current.m_zoom_handler.m_spline_mode)
 	{
@@ -1502,6 +1518,8 @@ void NoteColumnRenderer::UpdateReceptorGhostStuff(Actor* receptor) const
 			break;
 		case NCSM_Position:
 			NCR_current.m_zoom_handler.EvalForReceptor(song_beat, sp_zoom);
+			break;
+		default:
 			break;
 	}
 	m_column_render_args.SetPRZForActor(receptor, sp_pos, ae_pos, sp_rot, ae_rot, sp_zoom, ae_zoom);
@@ -1557,6 +1575,8 @@ void NoteColumnRenderer::DrawPrimitives()
 				{
 					holds[tn.pn].push_back(begin);
 				}
+				break;
+			default:
 				break;
 		}
 	}
