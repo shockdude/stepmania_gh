@@ -28,6 +28,7 @@
 #include "NotesLoaderDWI.h"
 #include "NotesLoaderKSF.h"
 #include "NotesLoaderBMS.h"
+#include "NotesLoaderCHART.h"
 #include <algorithm>
 
 /* register DisplayBPM with StringConversion */
@@ -153,6 +154,10 @@ bool Steps::GetNoteDataFromSimfile()
 	{
 		return BMSLoader::LoadNoteDataFromSimfile(stepFile, *this);
 	}
+   else if (extension == "chart")
+   {
+      return CHARTLoader::LoadNoteDataFromSimfile(stepFile, *this);
+   }
 	else if (extension == "edit")
 	{
 		// Try SSC, then fallback to SM.

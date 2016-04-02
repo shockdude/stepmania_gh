@@ -6,6 +6,7 @@
 #include "NotesLoaderDWI.h"
 #include "NotesLoaderBMS.h"
 #include "NotesLoaderKSF.h"
+#include "NotesLoaderCHART.h"
 #include "RageUtil.h"
 
 void NotesLoader::GetMainAndSubTitlesFromFullTitle( const RString &sFullTitle, RString &sMainTitleOut, RString &sSubTitleOut )
@@ -60,6 +61,9 @@ bool NotesLoader::LoadFromDir( const RString &sPath, Song &out, set<RString> &Bl
 	KSFLoader::GetApplicableFiles( sPath, list );
 	if( !list.empty() )
 		return KSFLoader::LoadFromDir( sPath, out );
+   CHARTLoader::GetApplicableFiles( sPath, list );
+   if( !list.empty() )
+      return CHARTLoader::LoadFromDir( sPath, out );
 	return false;
 }
 

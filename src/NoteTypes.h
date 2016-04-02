@@ -97,7 +97,7 @@ enum TapNoteType
    TapNoteType_HOPO,     /**< No strumming needed if you hit the last note (but strumming is accepted) */
    TapNoteType_GemHold, /**< Start of a hold note that's evaluated like a Gem */
    TapNoteType_HOPOHold, /**< Start of a held note that is initiated like a hammer-on */
-   // Fake has to be at the bottom or else the game won't start. What a dumb way of handling that.
+   // Fake has to be at the bottom or else the game won't start.
    TapNoteType_Fake,		/**< This arrow can't be scored for or against the player. */
 	NUM_TapNoteType,
 	TapNoteType_Invalid

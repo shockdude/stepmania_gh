@@ -564,6 +564,8 @@ void Player::Init(
    m_bStrumHitNow = false;
    
    m_bHOPOPossible = false;
+   
+   m_iFretsDown = 0;
 
 	m_fActiveRandomAttackStart = -1.0f;
 }
@@ -2332,7 +2334,6 @@ void Player::Step( int col, int row, const RageTimer &tm, bool bHeld, bool bRele
                                                                    IsChordHit( iRowOfOverlappingNoteOrRow )))
                {
                   if( m_iLastHitChordRow != iRowOfOverlappingNoteOrRow ) m_iLastHitChordRow = iRowOfOverlappingNoteOrRow;
-                  //if( !m_bHOPOPossible ) m_bHOPOPossible = true;
                   score = TNS_W1;
                   break;
                }
@@ -2671,6 +2672,8 @@ void Player::UpdateTapNotesMissedOlderThan( float fMissIfOlderThanSeconds )
 		else
 		{
 			tn.result.tns = TNS_Miss;
+         // HOPOs should not be possible after a miss
+         if( m_bHOPOPossible ) m_bHOPOPossible = false;
 		}
 	}
 }
@@ -2847,7 +2850,7 @@ void Player::FlashGhostRow( int iRow )
 
 void Player::CrossedRows( int iLastRowCrossed, const RageTimer &now )
 {
-	//LOG->Trace( "Player::CrossedRows   %d    %d", iFirstRowCrossed, iLastRowCrossed );
+	// LOG->Trace( "Player::CrossedRows   %d", iLastRowCrossed );
 
 	NoteData::all_tracks_iterator &iter = *m_pIterUncrossedRows;
 	int iLastSeenRow = -1;
@@ -2971,7 +2974,8 @@ void Player::CrossedRows( int iLastRowCrossed, const RageTimer &now )
 			int tickCurrent = m_Timing->GetTickcountAtRow( r );
 
 			// There is a tick count at this row
-			if( tickCurrent > 0 && r % ( ROWS_PER_BEAT / tickCurrent ) == 0 )
+         // Custom Guitar Hero tracks have 192 ticks per beat as default, this causes a divide by 0 with modulo
+			if( tickCurrent > 0 && ( ( ROWS_PER_BEAT / tickCurrent == 0 ) || ( r % ( ROWS_PER_BEAT / tickCurrent ) == 0 ) ) )
 			{
 
 				vector<int> viColsWithHold;
