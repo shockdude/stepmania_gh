@@ -29,9 +29,14 @@ void ReadBuf( const char *buf, int len, Song &outSong, Steps &outSteps, bool par
 {
    bool bDontReadThis = false;
    int iMode = 0;
-   int iPrevNoteMark = -1;
+   // iPrevNoteMark and iPrevNoteLength are vectors so columns can be checked individually
+   vector<int> iPrevNoteMark(5);
    int iPrevNoteTrack = -1;
-   int iPrevNoteLength = -1;
+   vector<int> iPrevNoteLength(5);
+   for(int i=0; i<5; i++) {
+      iPrevNoteMark[i] = -1;
+      iPrevNoteLength[i] = -1;
+   }
    bool bPrevNoteIsHOPO = false;
    // 192 is default resolution per beat in GH
    int resolution = 192;
@@ -78,9 +83,11 @@ void ReadBuf( const char *buf, int len, Song &outSong, Steps &outSteps, bool par
             // If it's not single mode, we don't care about it
             if( vsWords[i].find("Single") != std::string::npos ) {
                // reset these between songs
-               iPrevNoteMark = -1;
                iPrevNoteTrack = -1;
-               iPrevNoteLength = -1;
+               for(int j=0; j<5; j++) {
+                  iPrevNoteMark[j] = -1;
+                  iPrevNoteLength[j] = -1;
+               }
                // If we're parsing a song, add the previous notes parsed, then get space for new steps
                if( parseSongInfo ) {
                   if( readingNotes ) {
@@ -254,35 +261,35 @@ void ReadBuf( const char *buf, int len, Song &outSong, Steps &outSteps, bool par
                int iNoteMark = atoi(vsWords[i].c_str());
                int iNoteLength = atoi(vsWords[i+4].c_str());
                
-               if( iNoteTrack == iPrevNoteTrack && iPrevNoteLength + iPrevNoteMark >= iNoteMark ) {
-                  notedata.SetTapNote(iPrevNoteTrack, BeatToNoteRow((float)iPrevNoteMark/resolution), TAP_EMPTY);
-                  iPrevNoteLength = iNoteMark - iPrevNoteMark - (resolution / 8);
+               if( iNoteTrack == iPrevNoteTrack && iPrevNoteLength[iNoteTrack] + iPrevNoteMark[iNoteTrack] >= iNoteMark ) {
+                  notedata.SetTapNote(iPrevNoteTrack, BeatToNoteRow((float)iPrevNoteMark[iNoteTrack]/resolution), TAP_EMPTY);
+                  iPrevNoteLength[iNoteTrack] = iNoteMark - iPrevNoteMark[iNoteTrack] - (resolution / 8);
                   if( !bPrevNoteIsHOPO ) {
-                     if( iPrevNoteLength > 0 )
-                        notedata.AddHoldNote(iPrevNoteTrack, BeatToNoteRow((float)iPrevNoteMark/resolution),
-                                       BeatToNoteRow((float)(iPrevNoteMark+iPrevNoteLength)/resolution), TAP_ORIGINAL_GEM_HOLD);
+                     if( iPrevNoteLength[iNoteTrack] > 0 )
+                        notedata.AddHoldNote(iPrevNoteTrack, BeatToNoteRow((float)iPrevNoteMark[iNoteTrack]/resolution),
+                                       BeatToNoteRow((float)(iPrevNoteMark[iNoteTrack]+iPrevNoteLength[iNoteTrack])/resolution), TAP_ORIGINAL_GEM_HOLD);
                      else
-                        notedata.SetTapNote(iPrevNoteTrack, BeatToNoteRow((float)iPrevNoteMark/resolution), TAP_ORIGINAL_GEM);
+                        notedata.SetTapNote(iPrevNoteTrack, BeatToNoteRow((float)iPrevNoteMark[iNoteTrack]/resolution), TAP_ORIGINAL_GEM);
                   } else {
-                     if( iPrevNoteLength > 0 )
-                        notedata.AddHoldNote(iPrevNoteTrack, BeatToNoteRow((float)iPrevNoteMark/resolution),
-                                       BeatToNoteRow((float)(iPrevNoteMark+iPrevNoteLength)/resolution), TAP_ORIGINAL_HOPO_HOLD);
+                     if( iPrevNoteLength[iNoteTrack] > 0 )
+                        notedata.AddHoldNote(iPrevNoteTrack, BeatToNoteRow((float)iPrevNoteMark[iNoteTrack]/resolution),
+                                       BeatToNoteRow((float)(iPrevNoteMark[iNoteTrack]+iPrevNoteLength[iNoteTrack])/resolution), TAP_ORIGINAL_HOPO_HOLD);
                      else
-                        notedata.SetTapNote(iPrevNoteTrack, BeatToNoteRow((float)iPrevNoteMark/resolution), TAP_ORIGINAL_HOPO);
+                        notedata.SetTapNote(iPrevNoteTrack, BeatToNoteRow((float)iPrevNoteMark[iNoteTrack]/resolution), TAP_ORIGINAL_HOPO);
                   }
                }
                
                // If this note and the previous note are on the same beat and the previous note was a HOPO,
                // Change it to a normal gem
-               if( bPrevNoteIsHOPO && (iNoteMark == iPrevNoteMark) )
+               if( bPrevNoteIsHOPO && (iNoteMark == iPrevNoteMark[iNoteTrack]) )
                {
-                  if( iPrevNoteLength ) // Previous note was a hold
+                  if( iPrevNoteLength[iNoteTrack] ) // Previous note was a hold
                   {
-                     notedata.AddHoldNote(iPrevNoteTrack, BeatToNoteRow((float)iPrevNoteMark/resolution),
-                              BeatToNoteRow((float)(iPrevNoteMark+iPrevNoteLength)/resolution), TAP_ORIGINAL_GEM_HOLD);
+                     notedata.AddHoldNote(iPrevNoteTrack, BeatToNoteRow((float)iPrevNoteMark[iNoteTrack]/resolution),
+                              BeatToNoteRow((float)(iPrevNoteMark[iNoteTrack]+iPrevNoteLength[iNoteTrack])/resolution), TAP_ORIGINAL_GEM_HOLD);
                   } else
                   {
-                     notedata.SetTapNote(iPrevNoteTrack, BeatToNoteRow((float)iPrevNoteMark/resolution), TAP_ORIGINAL_GEM);
+                     notedata.SetTapNote(iPrevNoteTrack, BeatToNoteRow((float)iPrevNoteMark[iNoteTrack]/resolution), TAP_ORIGINAL_GEM);
                   }
                }
                
@@ -291,8 +298,8 @@ void ReadBuf( const char *buf, int len, Song &outSong, Steps &outSteps, bool par
                 * ...actually, the chart2mid2chart converter thingamabob has some rounding issues, so add 1 to the 16th note
                 * check just to catch all the things that should be HOPOs
                 */
-               if((iNoteMark - iPrevNoteMark - 1 <= resolution / 4) && (iNoteMark != iPrevNoteMark) && (iNoteTrack != iPrevNoteTrack)
-                  && (iPrevNoteMark != -1))
+               if((iNoteMark - iPrevNoteMark[iNoteTrack] - 1 <= resolution / 4) && (iNoteMark != iPrevNoteMark[iNoteTrack]) &&
+                  (iNoteTrack != iPrevNoteTrack) && (iPrevNoteMark[iNoteTrack] != -1))
                {
                   if( iNoteLength )
                   {
@@ -319,9 +326,9 @@ void ReadBuf( const char *buf, int len, Song &outSong, Steps &outSteps, bool par
                   bPrevNoteIsHOPO = false;
                }
                
-               iPrevNoteMark = iNoteMark;
+               iPrevNoteMark[iNoteTrack] = iNoteMark;
                iPrevNoteTrack = iNoteTrack;
-               iPrevNoteLength = iNoteLength;
+               iPrevNoteLength[iNoteTrack] = iNoteLength;
             }
          }
       }
