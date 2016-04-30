@@ -34,6 +34,8 @@ static const char *NotePartNames[] = {
 	"HoldTopCap",
 	"HoldBody",
 	"HoldBottomCap",
+   "Gem",
+   "HOPO",
 };
 XToString( NotePart );
 LuaXType( NotePart );
@@ -425,6 +427,8 @@ void NoteDisplay::Load( int iColNum, const PlayerState* pPlayerState, float fYRe
 	m_TapMine.Load(		sButton, "Tap Mine", pn, GameI[0].controller );
 	m_TapLift.Load(		sButton, "Tap Lift", pn, GameI[0].controller );
 	m_TapFake.Load(		sButton, "Tap Fake", pn, GameI[0].controller );
+   m_TapHOPO.Load(    sButton, "Tap HOPO", pn, GameI[0].controller );
+   m_TapGem.Load(       sButton, "Tap Gem", pn, GameI[0].controller );
 
 	// hold types
 	FOREACH_HoldType( ht )
@@ -436,6 +440,9 @@ void NoteDisplay::Load( int iColNum, const PlayerState* pPlayerState, float fYRe
 			m_HoldBody[ht][at].Load(	sButton, HoldTypeToString(ht)+" Body "+ActiveTypeToString(at), pn, GameI[0].controller );
 			m_HoldBottomCap[ht][at].Load(	sButton, HoldTypeToString(ht)+" Bottomcap "+ActiveTypeToString(at), pn, GameI[0].controller );
 			m_HoldTail[ht][at].Load(	sButton, HoldTypeToString(ht)+" Tail "+ActiveTypeToString(at), pn, GameI[0].controller );
+         // Not sure if this is necessary, but doing it anyway
+         m_GemHold[ht][at].Load(	sButton, HoldTypeToString(ht)+" Gemhead "+ActiveTypeToString(at), pn, GameI[0].controller );
+         m_HOPOHold[ht][at].Load(	sButton, HoldTypeToString(ht)+" HOPOhead "+ActiveTypeToString(at), pn, GameI[0].controller );
 		}
 	}
 }
@@ -566,7 +573,8 @@ bool NoteDisplay::DrawTapsInRange(const NoteFieldRenderArgs& field_args,
 			for(int c2= 0; c2 < field_args.note_data->GetNumTracks(); ++c2)
 			{
 				const TapNote &tmp = field_args.note_data->GetTapNote(c2, tap_row);
-				if(tmp.type == TapNoteType_HoldHead &&
+            if((tmp.type == TapNoteType_HoldHead || tmp.type == TapNoteType_HOPOHold ||
+                tmp.type == TapNoteType_GemHold) &&
 					tmp.subType == TapNoteSubType_Hold)
 				{
 					hold_begins_on_this_beat = true;
@@ -1227,8 +1235,15 @@ void NoteDisplay::DrawHold(const TapNote& tn,
 	}
 	if( cache->m_bHoldHeadIsAboveWavyParts )
 	{
-		Actor *pActor = GetHoldActor( m_HoldHead, NotePart_HoldHead, NoteRowToBeat(iRow), tn.subType == TapNoteSubType_Roll, bIsBeingHeld );
-		DrawActor(tn, pActor, NotePart_HoldHead, field_args, column_args, bFlipHeadAndTail ? fEndYOffset : fStartYOffset, fBeat, bIsAddition, fPercentFadeToFail, fColorScale, bIsBeingHeld);
+      // so this is the part that was screwing up how new hold types were displayed...
+      Actor *pActor = NULL;
+      if( tn.type == TapNoteType_GemHold )
+         pActor = GetHoldActor( m_GemHold, NotePart_Gem, NoteRowToBeat(iRow), false, bIsBeingHeld );
+      else if( tn.type == TapNoteType_HOPOHold )
+         pActor = GetHoldActor( m_HOPOHold, NotePart_HOPO, NoteRowToBeat(iRow), false, bIsBeingHeld );
+      else
+         pActor = GetHoldActor( m_HoldHead, NotePart_HoldHead, NoteRowToBeat(iRow), tn.subType == TapNoteSubType_Roll, bIsBeingHeld );
+      DrawActor(tn, pActor, NotePart_HoldHead, field_args, column_args, bFlipHeadAndTail ? fEndYOffset : fStartYOffset, fBeat, bIsAddition, fPercentFadeToFail, fColorScale, bIsBeingHeld);
 	}
 }
 
@@ -1264,7 +1279,8 @@ void NoteDisplay::DrawActor(const TapNote& tn, Actor* pActor, NotePart part,
 		column_args.glow.a * fGlow);
 	*/
 
-	bool bIsHoldHead = tn.type == TapNoteType_HoldHead;
+   bool bIsHoldHead = (tn.type == TapNoteType_HoldHead || tn.type == TapNoteType_HOPOHold ||
+                       tn.type == TapNoteType_GemHold);
 	bool bIsHoldCap = bIsHoldHead || tn.type == TapNoteType_HoldTail;
 
 	// So, thie call to GetBrightness does nothing because fColorScale is not
@@ -1273,7 +1289,7 @@ void NoteDisplay::DrawActor(const TapNote& tn, Actor* pActor, NotePart part,
 	// receptors is black.  However, I looked through the github history and
 	// it's been down here, disabled, since at least SM5 beta 1a.  I don't
 	// know if we should bring that behavior back now. -Kyz
-	if( tn.type != TapNoteType_HoldHead )
+	if( tn.type != TapNoteType_HoldHead && tn.type != TapNoteType_HOPOHold && tn.type != TapNoteType_GemHold )
 	{ fColorScale *= ArrowEffects::GetBrightness(m_pPlayerState, fBeat); }
 
 	// same logical structure as in UpdateReceptorGhostStuff, I just haven't
@@ -1376,6 +1392,21 @@ void NoteDisplay::DrawTap(const TapNote& tn,
 		pActor = GetTapActor( m_TapFake, NotePart_Fake, fBeat );
 		part = NotePart_Fake;
 	}
+   
+   // these need to be above that TODO otherwise the new holds are drawn with the wrong textures
+   else if( tn.type == TapNoteType_Gem ) {
+      pActor = GetTapActor( m_TapGem, NotePart_Gem, fBeat );
+   }
+   else if( tn.type == TapNoteType_HOPO ) {
+      pActor = GetTapActor( m_TapHOPO, NotePart_HOPO, fBeat );
+   }
+   else if( tn.type == TapNoteType_GemHold ) {
+      pActor = GetHoldActor( m_GemHold, NotePart_Gem, fBeat, false, false );
+   }
+   else if( tn.type == TapNoteType_HOPOHold ) {
+      pActor = GetHoldActor(m_HOPOHold, NotePart_HOPO, fBeat, false, false );
+   }
+   
 	// TODO: Simplify all of the below.
 	else if (bOnSameRowAsHoldStart && bOnSameRowAsRollStart)
 	{
@@ -1530,12 +1561,16 @@ void NoteColumnRenderer::DrawPrimitives()
 			case TapNoteType_Attack:
 			case TapNoteType_AutoKeysound:
 			case TapNoteType_Fake:
+         case TapNoteType_Gem:
+         case TapNoteType_HOPO:
 				if(!tn.result.bHidden)
 				{
 					taps[tn.pn].push_back(begin);
 				}
 				break;
 			case TapNoteType_HoldHead:
+         case TapNoteType_GemHold:
+         case TapNoteType_HOPOHold:
 				if(tn.HoldResult.hns != HNS_Held)
 				{
 					holds[tn.pn].push_back(begin);

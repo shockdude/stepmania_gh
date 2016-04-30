@@ -490,10 +490,29 @@ void Player::Init(
 		m_new_field->set_player_options(&(GetPlayerState()->m_PlayerOptions.GetCurrent()));
 		this->AddChild(m_new_field);
 	}
-
-	m_vbFretIsDown.resize( GAMESTATE->GetCurrentStyle(GetPlayerState()->m_PlayerNumber)->m_iColsPerPlayer );
-	std::fill(m_vbFretIsDown.begin(), m_vbFretIsDown.end(), false);
-
+   
+   
+   
+   m_vbFretIsDown.resize( GAMESTATE->GetCurrentStyle(GetPlayerState()->m_PlayerNumber)->m_iColsPerPlayer );
+   std::fill(m_vbFretIsDown.begin(), m_vbFretIsDown.end(), false);
+    
+   m_vbPrevFrets.resize( GAMESTATE->GetCurrentStyle(GetPlayerState()->m_PlayerNumber)->m_iColsPerPlayer );
+   std::fill(m_vbPrevFrets.begin(), m_vbPrevFrets.end(), false);
+    
+   if( GAMESTATE && !strcmp(GAMESTATE->GetCurrentGame()->gameName.c_str(), "guitar") )
+      m_iStrumCol = GAMESTATE->GetCurrentStyle(GetPlayerState()->m_PlayerNumber)->m_iColsPerPlayer - 1;
+   else m_iStrumCol = -1;
+    
+   m_iTopFret = m_iStrumCol;
+   
+   m_iLastHitChordRow = -1;
+   
+   m_bStrumHitNow = false;
+   
+   m_bHOPOPossible = false;
+   
+   m_iFretsDown = 0;
+   
 	m_fActiveRandomAttackStart = -1.0f;
 }
 
@@ -589,6 +608,10 @@ static bool NeedsTapJudging( const TapNote &tn )
 	case TapNoteType_HoldHead:
 	case TapNoteType_Mine:
 	case TapNoteType_Lift:
+   case TapNoteType_Gem:
+   case TapNoteType_HOPO:
+   case TapNoteType_GemHold:
+   case TapNoteType_HOPOHold:
 		return tn.result.tns == TNS_None;
 	case TapNoteType_HoldTail:
 	case TapNoteType_Attack:
@@ -609,6 +632,8 @@ static bool NeedsHoldJudging( const TapNote &tn )
 	{
 	DEFAULT_FAIL( tn.type );
 	case TapNoteType_HoldHead:
+   case TapNoteType_GemHold:
+   case TapNoteType_HOPOHold:
 		return tn.HoldResult.hns == HNS_None;
 	case TapNoteType_Tap:
 	case TapNoteType_HoldTail:
@@ -618,6 +643,8 @@ static bool NeedsHoldJudging( const TapNote &tn )
 	case TapNoteType_AutoKeysound:
 	case TapNoteType_Fake:
 	case TapNoteType_Empty:
+   case TapNoteType_Gem:
+   case TapNoteType_HOPO:
 		return false;
 	}
 }
@@ -1048,7 +1075,8 @@ void Player::Update( float fDeltaTime )
 		for( ; !iter.IsAtEnd() &&  iter.Row() <= iSongRow; ++iter )
 		{
 			TapNote &tn = *iter;
-			if( tn.type != TapNoteType_HoldHead )
+         if( tn.type != TapNoteType_HoldHead && tn.type != TapNoteType_HOPOHold &&
+            tn.type != TapNoteType_GemHold )
 				continue;
 
 			int iTrack = iter.Track();
@@ -1948,7 +1976,8 @@ void Player::PlayKeysound( const TapNote &tn, TapNoteScore score )
 	if( tn.iKeysoundIndex >= 0 && tn.iKeysoundIndex < (int) m_vKeysounds.size() )
 	{
 		// handle a case for hold notes
-		if( tn.type == TapNoteType_HoldHead )
+      if( tn.type == TapNoteType_HoldHead || tn.type == TapNoteType_HOPOHold ||
+         tn.type == TapNoteType_GemHold )
 		{
 			// if the hold is not already held
 			if( tn.HoldResult.hns == HNS_None )
@@ -1973,6 +2002,76 @@ void Player::PlayKeysound( const TapNote &tn, TapNoteScore score )
 	}
 }
 
+/**
+ * Returns true if all notes in the row are successfully hit with no extra presses, for guitar mode,
+ * but other custom modes could use it too, with some modification
+ */
+bool Player::IsChordHit( int row )
+{
+   for( int col = 0; col<m_iStrumCol; col++) {
+      if( m_vbFretIsDown[col] ) {
+         TapNote *pTN = NULL;
+         NoteData::iterator iter = m_NoteData.FindTapNote( col, row );
+         if( iter == m_NoteData.end(col) ) return false; // No note in the col being held at the row where the chord is
+         pTN = &iter->second;
+         // The following notetypes should never appear in a chord in guitar mode
+         if( pTN->type == TapNoteType_Empty || pTN->type == TapNoteType_Attack ||
+            pTN->type == TapNoteType_AutoKeysound || pTN->type == TapNoteType_Fake ) return false;
+      }
+   }
+   return true;
+}
+
+/**
+ * Handles fret logic for guitar mode
+ */
+void Player::DoFretLogic( int col, int row, const RageTimer &tm, bool bRelease, bool bResetStrum )
+{
+   // Update previous fret state
+   if( m_vbFretIsDown[col] != m_vbPrevFrets[col] ) m_vbPrevFrets[col] = m_vbFretIsDown[col];
+   
+   // If fret is not registered as down and it was not released (aka was pressed), set the fret to pressed
+   if( !m_vbFretIsDown[col] && !bRelease ) {
+      m_vbFretIsDown[col] = true;
+      if( col != m_iStrumCol ) m_iFretsDown++;
+      // Set the new topfret if this is the top
+      if( col != m_iStrumCol && (col > m_iTopFret || m_iTopFret == m_iStrumCol) ) m_iTopFret = col;
+      if( col == m_iStrumCol ) {
+         // Have the flag set only for when the strum bar is pressed
+         m_bStrumHitNow = true;
+         // Call Step() for each fret being held down
+         for( int i=m_iStrumCol-1; i>=0; i-- ) {
+            if(m_vbFretIsDown[i]) Step(i, row, tm, false, false);
+         }
+         m_bStrumHitNow = false;
+      }
+   }
+   
+   // If the fret is registered as down and it was released, change it to be released
+   if( m_vbFretIsDown[col] && bRelease ) {
+      m_vbFretIsDown[col] = false;
+      if( col != m_iStrumCol ) m_iFretsDown--;
+      // Call Step() for the next fret down to perform pull-offs
+      if( col != m_iStrumCol && m_iTopFret == col ) {
+         for( int i=col-1; i>=-1; i-- ) {
+            if(i == -1) {
+               m_iTopFret = m_iStrumCol;
+               // use bHeld as a flag to say "I'm not actually being pressed"
+               Step(m_iStrumCol, row, tm, true, false);
+               break;
+            }
+            if(m_vbFretIsDown[i]) {
+               m_iTopFret = i;
+               Step(i, row, tm, false, false);
+               break;
+            }
+         }
+      }
+   }
+   // This is to avoid the strum bar becoming "stuck" after releasing all frets
+   if( col == m_iStrumCol && bResetStrum ) m_vbFretIsDown[m_iStrumCol] = false;
+}
+
 void Player::Step( int col, int row, const RageTimer &tm, bool bHeld, bool bRelease )
 {
 	if( IsOniDead() )
@@ -1995,6 +2094,14 @@ void Player::Step( int col, int row, const RageTimer &tm, bool bHeld, bool bRele
 	}
 
 	const int iSongRow = row == -1 ? BeatToNoteRow( fSongBeat ) : row;
+   
+   bool bCalledFromHOPO = false;
+   
+   // Do fret logic if this is guitar mode and Step() wasn't just called recursively
+   if( m_iStrumCol != -1 ) {
+      if( !m_vbFretIsDown[col] || bRelease ) DoFretLogic( col, row, tm, bRelease, bHeld );
+      else bCalledFromHOPO = true;
+   }
 
 	if( col != -1 && !bRelease )
 	{
@@ -2170,12 +2277,88 @@ void Player::Step( int col, int row, const RageTimer &tm, bool bHeld, bool bRele
 		NoteData::iterator iter = m_NoteData.FindTapNote( col, iRowOfOverlappingNoteOrRow );
 		DEBUG_ASSERT( iter!= m_NoteData.end(col) );
 		auto &iterNote = iter->second;
+      
+      // Number of notes in the row
+      unsigned short int iNotesInRow = m_NoteData.GetNumTracksWithTapOrHoldHead( iRowOfOverlappingNoteOrRow );
+      // Previous top fret based on m_vbPrevFrets
+      unsigned short int iPrevTopFret = m_iStrumCol;
 
 		switch( m_pPlayerState->m_PlayerController )
 		{
 		case PC_HUMAN:
 			switch( iterNote.type )
 			{
+         case TapNoteType_HOPO:
+         case TapNoteType_HOPOHold:
+            // Check if the previous note was hit successfully.
+            if( m_bHOPOPossible )
+            {
+               // Determine if this is a chord or a single note
+               if( iNotesInRow > 1 )
+               {
+                  // If there's a change, the right # frets are pressed, and one of them is this col,
+                  // and the chord has been confirmed a hit, then continue
+                  if( iNotesInRow == m_iFretsDown && m_vbFretIsDown[col] && fSecondsFromExact <= GetWindowSeconds(TW_W5) &&
+                     (m_iLastHitChordRow == iRowOfOverlappingNoteOrRow || IsChordHit( iRowOfOverlappingNoteOrRow )))
+                  {
+                     if( m_iLastHitChordRow != iRowOfOverlappingNoteOrRow ) m_iLastHitChordRow = iRowOfOverlappingNoteOrRow;
+                     // Score for the other rows being held, too. This only really works if the highest fret is hit last
+                     for( int i=col-1; i>=0; i-- )
+                     {
+                        if(m_vbFretIsDown[i])
+                        {
+                           Step(i, row, tm, false, false);
+                           break;
+                        }
+                     }
+                     score = TNS_W1;
+                     break;
+                  }
+               } else
+               {
+                  if( m_iFretsDown > 1 )
+                  {
+                     for( int i=0; i<m_iStrumCol; i++ )
+                     {
+                        if( m_vbPrevFrets[i] ) iPrevTopFret = i;
+                     }
+                  }
+                  // If this col is the topfret, and it wasn't previously, then it's a hit
+                  if( ( m_iFretsDown<2 || (m_iTopFret == col && iPrevTopFret != col) ) && fSecondsFromExact <= GetWindowSeconds(TW_W5) && m_vbFretIsDown[col] )
+                  {
+                     //m_bHOPOPossible = true;
+                     score = TNS_W1;
+                     break;
+                  }
+               }
+            }
+            // Fall through to gem grading
+         case TapNoteType_Gem:
+         case TapNoteType_GemHold:
+            // Determine if this is a chord or a single note
+            if( iNotesInRow > 1 )
+            {
+               // If the right # frets are pressed, one of them is this col, and the strum bar was just pressed,
+               // and the chord was confirmed as a hit
+               if( m_iFretsDown == iNotesInRow && m_vbFretIsDown[col] && m_bStrumHitNow &&
+                  fSecondsFromExact <= GetWindowSeconds(TW_W5) && (m_iLastHitChordRow == iRowOfOverlappingNoteOrRow ||
+                                                                   IsChordHit( iRowOfOverlappingNoteOrRow )))
+               {
+                  if( m_iLastHitChordRow != iRowOfOverlappingNoteOrRow ) m_iLastHitChordRow = iRowOfOverlappingNoteOrRow;
+                  score = TNS_W1;
+                  break;
+               }
+            } else
+            {
+               // If this is the dominant fret and the strum bar was just pressed, it's a hit
+               if( m_iTopFret == col && (m_bStrumHitNow || col == m_iStrumCol) && fSecondsFromExact <= GetWindowSeconds(TW_W5) )
+               {
+                  //m_bHOPOPossible = true;
+                  score = TNS_W1;
+                  break;
+               }
+            }
+            break;
 			case TapNoteType_Mine:
 				// Stepped too close to mine?
 				if( !bRelease && ( REQUIRE_STEP_ON_MINES == !bHeld ) &&
@@ -2197,6 +2380,8 @@ void Player::Step( int col, int row, const RageTimer &tm, bool bHeld, bool bRele
 				}
 				// Fall through to default.
 			default:
+            // Don't grade these notes if Step() was called from a pull-off in guitar mode
+            if( m_iStrumCol != -1 && bCalledFromHOPO ) break;
 				if( (iterNote.type == TapNoteType_Lift) == bRelease )
 				{
 					if(	 fSecondsFromExact <= GetWindowSeconds(TW_W1) )	score = TNS_W1;
@@ -2375,7 +2560,8 @@ void Player::Step( int col, int row, const RageTimer &tm, bool bHeld, bool bRele
 		{
 			iterNote.result.tns = score;
 			iterNote.result.fTapNoteOffset = -fNoteOffset;
-		}
+         m_bHOPOPossible = true;
+      } else if( m_iStrumCol != -1 && !bRelease && m_iTopFret == col ) m_bHOPOPossible = false;
 
 		m_LastTapNoteScore = score;
 		if( GAMESTATE->GetCurrentGame()->m_bCountNotesSeparately )
@@ -2507,6 +2693,8 @@ void Player::UpdateTapNotesMissedOlderThan( float fMissIfOlderThanSeconds )
 			{
 				m_new_field->did_tap_note(iter.Track(), tn.result.tns, false);
 			}
+         // HOPOs should not be possible after a miss
+         if( m_bHOPOPossible ) m_bHOPOPossible = false;
 		}
 	}
 }
@@ -2700,6 +2888,8 @@ void Player::CrossedRows( int iLastRowCrossed, const RageTimer &now )
 		switch( tn.type )
 		{
 			case TapNoteType_HoldHead:
+         case TapNoteType_GemHold:
+         case TapNoteType_HOPOHold:
 			{
 				tn.HoldResult.fLife = INITIAL_HOLD_LIFE;
 				if( !REQUIRE_STEP_ON_HOLD_HEADS )
@@ -2809,7 +2999,8 @@ void Player::CrossedRows( int iLastRowCrossed, const RageTimer &now )
 			int tickCurrent = m_Timing->GetTickcountAtRow( r );
 
 			// There is a tick count at this row
-			if( tickCurrent > 0 && r % ( ROWS_PER_BEAT / tickCurrent ) == 0 )
+         // Extra mathmatics here is a failsafe incase *someone* accidentally sets tick count too high
+			if( tickCurrent > 0 && ( ( ROWS_PER_BEAT / tickCurrent == 0 ) || ( r % ( ROWS_PER_BEAT / tickCurrent ) == 0 ) ) )
 			{
 
 				vector<int> viColsWithHold;

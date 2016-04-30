@@ -25,6 +25,8 @@ static const char* NewSkinTapPartNames[] = {
 	"Tap",
 	"Mine",
 	"Lift",
+   "Gem",
+   "HOPO",
 };
 XToString(NewSkinTapPart);
 LuaXType(NewSkinTapPart);
@@ -1172,7 +1174,10 @@ static vector<vector<string> > button_lists = {
 // StepsType_kickbox_insect,
 	{"LeftFoot", "UpLeftFist", "DownLeftFist", "DownRightFist", "UpRightFist", "RightFoot"},
 // StepsType_kickbox_arachnid,
-	{"DownLeftFoot", "UpLeftFoot", "UpLeftFist", "DownLeftFist", "DownRightFist", "UpRightFist", "UpRightFoot", "DownRightFoot"}
+	{"DownLeftFoot", "UpLeftFoot", "UpLeftFist", "DownLeftFist", "DownRightFist", "UpRightFist", "UpRightFoot", "DownRightFoot"},
+// StepsType_guitar_solo,
+   {"Fret1", "Fret2", "Fret3", "Fret4", "Fret5", "StrumDown"}
+// There should really be some assert to make sure this is the same length as the StepsType Enum
 };
 
 bool NewSkinLoader::supports_needed_buttons(StepsType stype) const

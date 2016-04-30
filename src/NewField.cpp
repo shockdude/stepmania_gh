@@ -11,7 +11,7 @@
 #include "RageDisplay.h"
 #include "RageLog.h"
 #include "RageMath.h"
-#include "RageUtil.h"
+#include "RageUtil.hpp"
 #include "ScreenDimensions.h"
 #include "Sprite.h"
 #include "Steps.h"
@@ -1037,7 +1037,8 @@ void NewFieldColumn::imitate_did_note(TapNote const& tap)
 	{
 		// Pass false for the bright arg because it is not stored when the note
 		// is hit.
-		if(tap.type == TapNoteType_HoldHead)
+		if(tap.type == TapNoteType_HoldHead || tap.type == TapNoteType_GemHold ||
+         tap.type == TapNoteType_HOPOHold )
 		{
 			did_hold_note_internal(tap.HoldResult.hns, false);
 		}
@@ -1119,7 +1120,8 @@ NewFieldColumn::render_note::render_note(NewFieldColumn* column,
 {
 	note_iter= column_end;
 	double beat= NoteRowToBeat(iter->first);
-	if(iter->second.type == TapNoteType_HoldHead)
+   if(iter->second.type == TapNoteType_HoldHead || iter->second.type == TapNoteType_GemHold ||
+      iter->second.type == TapNoteType_HOPOHold)
 	{
 		double hold_draw_beat;
 		double hold_draw_second;
@@ -1165,7 +1167,8 @@ NewFieldColumn::render_note::render_note(NewFieldColumn* column,
 			--prev_note;
 			double prev_beat= 0.0;
 			double prev_second= 0.0;
-			if(prev_note->second.type == TapNoteType_HoldHead)
+         if(prev_note->second.type == TapNoteType_HoldHead || iter->second.type == TapNoteType_GemHold ||
+            iter->second.type == TapNoteType_HOPOHold)
 			{
 				prev_beat= NoteRowToBeat(prev_note->first + prev_note->second.iDuration);
 				prev_second= prev_note->second.end_second;
@@ -1306,6 +1309,8 @@ void NewFieldColumn::build_render_lists()
 				case TapNoteType_Attack:
 				case TapNoteType_AutoKeysound:
 				case TapNoteType_Fake:
+            case TapNoteType_Gem:
+            case TapNoteType_HOPO:
 					if((!tn.result.bHidden || !m_use_game_music_beat) &&
 						(m_show_unjudgable_notes || m_timing_data->IsJudgableAtBeat(tap_beat)))
 					{
@@ -1316,6 +1321,8 @@ void NewFieldColumn::build_render_lists()
 					}
 					break;
 				case TapNoteType_HoldHead:
+            case TapNoteType_GemHold:
+            case TapNoteType_HOPOHold:
 					if((tn.HoldResult.hns != HNS_Held || !m_use_game_music_beat) &&
 						(m_show_unjudgable_notes || m_timing_data->IsJudgableAtBeat(tap_beat)))
 					{
@@ -1587,6 +1594,31 @@ void NewFieldColumn::draw_taps_internal()
 						break;
 				}
 				break;
+         case TapNoteType_Gem:
+            part= NSTP_Gem;
+            head_beat= tap_beat;
+            break;
+         case TapNoteType_HOPO:
+            part= NSTP_HOPO;
+            head_beat= tap_beat;
+            break;
+         case TapNoteType_GemHold:
+            part= NSTP_Gem;
+            get_hold_draw_time(tn, tap_beat, head_beat, head_second);
+            active= HOLD_COUNTS_AS_ACTIVE(tn);
+            tail_beat= tap_beat + NoteRowToBeat(tn.iDuration);
+            // Gemhold and HOPOhold should only be hold for subtypes
+            head_part= NSTOP_HoldHead;
+            tail_part= NSTOP_HoldTail;
+            break;
+         case TapNoteType_HOPOHold:
+            part= NSTP_HOPO;
+            get_hold_draw_time(tn, tap_beat, head_beat, head_second);
+            active= HOLD_COUNTS_AS_ACTIVE(tn);
+            tail_beat= tap_beat + NoteRowToBeat(tn.iDuration);
+            head_part= NSTOP_HoldHead;
+            tail_part= NSTOP_HoldTail;
+            break;
 			default:
 				part= NSTP_Tap;
 				head_beat= tap_beat;

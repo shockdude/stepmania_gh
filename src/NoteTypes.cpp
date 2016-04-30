@@ -13,6 +13,10 @@ TapNote TAP_ORIGINAL_ROLL_HEAD	( TapNoteType_HoldHead,	TapNoteSubType_Roll,	TapN
 TapNote TAP_ORIGINAL_MINE	( TapNoteType_Mine,	TapNoteSubType_Invalid,	TapNoteSource_Original, "", 0, -1 );
 TapNote TAP_ORIGINAL_ATTACK	( TapNoteType_Attack,	TapNoteSubType_Invalid,	TapNoteSource_Original, "", 0, -1 );
 TapNote TAP_ORIGINAL_AUTO_KEYSOUND	( TapNoteType_AutoKeysound,TapNoteSubType_Invalid,	TapNoteSource_Original, "", 0, -1 );
+TapNote TAP_ORIGINAL_GEM	( TapNoteType_Gem,	TapNoteSubType_Invalid,	TapNoteSource_Original, "", 0, -1 );
+TapNote TAP_ORIGINAL_HOPO	( TapNoteType_HOPO,	TapNoteSubType_Invalid,	TapNoteSource_Original, "", 0, -1 );
+TapNote TAP_ORIGINAL_GEM_HOLD	( TapNoteType_GemHold,	TapNoteSubType_Hold,	TapNoteSource_Original, "", 0, -1 );
+TapNote TAP_ORIGINAL_HOPO_HOLD	( TapNoteType_HOPOHold,	TapNoteSubType_Hold,	TapNoteSource_Original, "", 0, -1 );
 TapNote TAP_ORIGINAL_FAKE	( TapNoteType_Fake,	TapNoteSubType_Invalid,	TapNoteSource_Original, "", 0, -1 );
 //TapNote TAP_ORIGINAL_MINE_HEAD ( TapNoteType_HoldHead, TapNoteSubType_Mine, TapNoteSource_Original, "", 0, -1 );
 TapNote TAP_ADDITION_TAP	( TapNoteType_Tap,	TapNoteSubType_Invalid,	TapNoteSource_Addition, "", 0, -1 );
@@ -28,6 +32,10 @@ static const char *TapNoteTypeNames[] = {
 	"Lift",
 	"Attack",
 	"AutoKeySound",
+   "Gem",
+   "HOPO",
+   "GemHold",
+   "HOPOHold",
 	"Fake",
 };
 XToString( TapNoteType );

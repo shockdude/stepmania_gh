@@ -33,6 +33,8 @@ enum NewSkinTapPart
 	NSTP_Tap,
 	NSTP_Mine,
 	NSTP_Lift,
+   NSTP_Gem,
+   NSTP_HOPO,
 	NUM_NewSkinTapPart,
 	NewSkinTapPart_Invalid
 };

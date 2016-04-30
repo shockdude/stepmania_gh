@@ -9,6 +9,7 @@
 #include "NotesLoaderDWI.h"
 #include "NotesLoaderBMS.h"
 #include "NotesLoaderKSF.h"
+#include "NotesLoaderChart.h"
 #include "RageUtil.h"
 
 using std::vector;
@@ -83,6 +84,9 @@ bool NotesLoader::LoadFromDir( const std::string &sPath, Song &out, std::set<std
 	{
 		return KSFLoader::LoadFromDir( sPath, out );
 	}
+   CHARTLoader::GetApplicableFiles( sPath, list );
+   if( !list.empty() )
+      return CHARTLoader::LoadFromDir( sPath, out );
 	return false;
 }
 

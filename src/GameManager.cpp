@@ -101,6 +101,9 @@ static const StepsTypeInfo g_StepsTypeInfos[] = {
 	{ "kickbox-quadarm", 4, true, StepsTypeCategory_Single },
 	{ "kickbox-insect", 6, true, StepsTypeCategory_Single },
 	{ "kickbox-arachnid", 8, true, StepsTypeCategory_Single },
+   // guitar mode, added by mikex5
+   { "guitar-solo", 6, false, StepsTypeCategory_Single },
+   //{ "guitar-solo6", 7, false, StepsTypeCategory_Single },
 };
 
 
@@ -3215,6 +3218,274 @@ static const Game g_Game_Kickbox =
 	TNS_W5,	// m_mapW5To
 };
 
+/** Guitar ****************************************************************/
+static const AutoMappings g_AutoKeyMappings_Guitar = AutoMappings (
+   "", "", "",
+    AutoMappingEntry( 0, KEY_Ca,		GUITAR_BUTTON_FRET1,		false ),
+    AutoMappingEntry( 0, KEY_Cs,		GUITAR_BUTTON_FRET2,		false ),
+    AutoMappingEntry( 0, KEY_Cd,		GUITAR_BUTTON_FRET3,		false ),
+    AutoMappingEntry( 0, KEY_Cf,		GUITAR_BUTTON_FRET4,		false ),
+    AutoMappingEntry( 0, KEY_Cg,		GUITAR_BUTTON_FRET5,		false ),
+    AutoMappingEntry( 0, KEY_SPACE,		GUITAR_BUTTON_STRUMDOWN,		false ),
+    AutoMappingEntry( 0, KEY_KP_C7,		GUITAR_BUTTON_FRET1,		true ),
+    AutoMappingEntry( 0, KEY_KP_C9,		GUITAR_BUTTON_FRET2,		true ),
+    AutoMappingEntry( 0, KEY_KP_C5,		GUITAR_BUTTON_FRET3,		true ),
+    AutoMappingEntry( 0, KEY_KP_C1,		GUITAR_BUTTON_FRET4,		true ),
+    AutoMappingEntry( 0, KEY_KP_C3,		GUITAR_BUTTON_FRET5,		true ),
+    AutoMappingEntry( 0, KEY_KP_C2,		GUITAR_BUTTON_STRUMDOWN,		true )
+);
+
+// The strum bar is always the last column, so for a guitar game with 6 frets, strum would be the seventh column
+static const int GUITAR_COL_SPACING = 52;
+
+static const Style g_Style_Guitar_Solo =
+{	// STYLE_GUITAR_SOLO
+   true,				// m_bUsedForGameplay
+   true,				// m_bUsedForEdit
+   false,				// m_bUsedForDemonstration
+   true,				// m_bUsedForHowToPlay
+   "solo",			// m_szName
+   StepsType_guitar_solo,		// m_StepsType
+   StyleType_OnePlayerOneSide,		// m_StyleType
+   6,				// m_iColsPerPlayer
+   {	// m_ColumnInfo[NUM_PLAYERS][MAX_COLS_PER_PLAYER];
+      {	// PLAYER_1
+         { TRACK_1,	-GUITAR_COL_SPACING*2.0f, NULL },
+         { TRACK_2,	-GUITAR_COL_SPACING*1.0f, NULL },
+         { TRACK_3,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_4,	+GUITAR_COL_SPACING*1.0f, NULL },
+         { TRACK_5,	+GUITAR_COL_SPACING*2.0f, NULL },
+         { TRACK_6,	+GUITAR_COL_SPACING*0.0f, NULL },
+      },
+      {	// PLAYER_2
+         { TRACK_1,	-GUITAR_COL_SPACING*2.0f, NULL },
+         { TRACK_2,	-GUITAR_COL_SPACING*1.0f, NULL },
+         { TRACK_3,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_4,	+GUITAR_COL_SPACING*1.0f, NULL },
+         { TRACK_5,	+GUITAR_COL_SPACING*2.0f, NULL },
+         { TRACK_6,	+GUITAR_COL_SPACING*0.0f, NULL },
+      },
+   },
+   {	// m_iInputColumn[NUM_GameController][NUM_GameButton]
+      { 0, 1, 2, 3, 4, 5, Style::END_MAPPING },
+      { 0, 1, 2, 3, 4, 5, Style::END_MAPPING },
+   },
+   {	// m_iColumnDrawOrder[MAX_COLS_PER_PLAYER];
+      5,4,0,3,1,2
+   },
+   false, // m_bCanUseBeginnerHelper
+   false, // m_bLockDifficulties
+};
+
+static const Style g_Style_Guitar_Versus =
+{	// STYLE_GUITAR_VERSUS
+   true,				// m_bUsedForGameplay
+   false,				// m_bUsedForEdit
+   true,				// m_bUsedForDemonstration
+   false,				// m_bUsedForHowToPlay
+   "versus",			// m_szName
+   StepsType_guitar_solo,		// m_StepsType
+   StyleType_TwoPlayersTwoSides,		// m_StyleType
+   6,				// m_iColsPerPlayer
+   {	// m_ColumnInfo[NUM_PLAYERS][MAX_COLS_PER_PLAYER];
+      {	// PLAYER_1
+         { TRACK_1,	-GUITAR_COL_SPACING*2.0f, NULL },
+         { TRACK_2,	-GUITAR_COL_SPACING*1.0f, NULL },
+         { TRACK_3,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_4,	+GUITAR_COL_SPACING*1.0f, NULL },
+         { TRACK_5,	+GUITAR_COL_SPACING*2.0f, NULL },
+         { TRACK_6,	+GUITAR_COL_SPACING*0.0f, NULL },
+      },
+      {	// PLAYER_2
+         { TRACK_1,	-GUITAR_COL_SPACING*2.0f, NULL },
+         { TRACK_2,	-GUITAR_COL_SPACING*1.0f, NULL },
+         { TRACK_3,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_4,	+GUITAR_COL_SPACING*1.0f, NULL },
+         { TRACK_5,	+GUITAR_COL_SPACING*2.0f, NULL },
+         { TRACK_6,	+GUITAR_COL_SPACING*0.0f, NULL },
+      },
+   },
+   {	// m_iInputColumn[NUM_GameController][NUM_GameButton]
+      { 0, 1, 2, 3, 4, 5, Style::END_MAPPING },
+      { 0, 1, 2, 3, 4, 5, Style::END_MAPPING },
+   },
+   {	// m_iColumnDrawOrder[MAX_COLS_PER_PLAYER];
+      5,4,0,3,1,2
+   },
+   false, // m_bCanUseBeginnerHelper
+   false, // m_bLockDifficulties
+};
+
+/* Needs to have combined scoring somehow
+static const Style g_Style_Guitar_Group =
+{	// STYLE_GUITAR_GROUP
+   true,				// m_bUsedForGameplay
+   false,				// m_bUsedForEdit
+   false,				// m_bUsedForDemonstration
+   false,				// m_bUsedForHowToPlay
+   "group",			// m_szName
+   StepsType_guitar_solo,	// m_StepsType
+   StyleType_TwoPlayersTwoSides,		// m_StyleType
+   6,				// m_iColsPerPlayer
+   {	// m_ColumnInfo[NUM_PLAYERS][MAX_COLS_PER_PLAYER];
+      {	// PLAYER_1
+         { TRACK_1,	-GUITAR_COL_SPACING*2.0f, NULL },
+         { TRACK_2,	-GUITAR_COL_SPACING*1.0f, NULL },
+         { TRACK_3,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_4,	+GUITAR_COL_SPACING*1.0f, NULL },
+         { TRACK_5,	+GUITAR_COL_SPACING*2.0f, NULL },
+         { TRACK_6,	+GUITAR_COL_SPACING*0.0f, NULL },
+      },
+      {	// PLAYER_2
+         { TRACK_1,	-GUITAR_COL_SPACING*2.0f, NULL },
+         { TRACK_2,	-GUITAR_COL_SPACING*1.0f, NULL },
+         { TRACK_3,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_4,	+GUITAR_COL_SPACING*1.0f, NULL },
+         { TRACK_5,	+GUITAR_COL_SPACING*2.0f, NULL },
+         { TRACK_6,	+GUITAR_COL_SPACING*0.0f, NULL },
+      },
+   },
+   {	// m_iInputColumn[NUM_GameController][NUM_GameButton]
+      { 0, 1, 2, 3, 4, 5, Style::END_MAPPING },
+      { 0, 1, 2, 3, 4, 5, Style::END_MAPPING },
+   },
+   {	// m_iColumnDrawOrder[MAX_COLS_PER_PLAYER];
+      5,4,0,3,1,2
+   },
+   false, // m_bCanUseBeginnerHelper
+   false, // m_bLockDifficulties
+};
+*/
+
+/* Styles for 3x2 mode (AKA Guitar Live)
+ note, need to add 7th track and 6th fret to make this work
+static const Style g_Style_Guitar_Solo6 =
+{	// STYLE_GUITAR_SOLO6
+   true,				// m_bUsedForGameplay
+   false,				// m_bUsedForEdit
+   false,				// m_bUsedForDemonstration
+   false,				// m_bUsedForHowToPlay
+   "solo6",			// m_szName
+   StepsType_guitar_solo6,	// m_StepsType
+   StyleType_OnePlayerOneSide,		// m_StyleType
+   7,				// m_iColsPerPlayer
+   {	// m_ColumnInfo[NUM_PLAYERS][MAX_COLS_PER_PLAYER];
+      {	// PLAYER_1
+         { TRACK_1,	-GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_2,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_3,	+GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_4,	-GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_5,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_6,	+GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_7,	+GUITAR_COL_SPACING*0.0f, NULL },
+      },
+      {	// PLAYER_2
+         { TRACK_1,	-GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_2,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_3,	+GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_4,	-GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_5,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_6,	+GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_7,	+GUITAR_COL_SPACING*0.0f, NULL },
+      },
+   },
+   {	// m_iInputColumn[NUM_GameController][NUM_GameButton]
+      { 0, 1, 2, 3, 4, 5, 6, Style::END_MAPPING },
+      { 0, 1, 2, 3, 4, 5, 6, Style::END_MAPPING },
+   },
+   {	// m_iColumnDrawOrder[MAX_COLS_PER_PLAYER];
+      6,5,3,4,2,0,1
+   },
+   false, // m_bCanUseBeginnerHelper
+   false, // m_bLockDifficulties
+};
+
+static const Style g_Style_Guitar_Group6 =
+{	// STYLE_GUITAR_GROUP6
+   true,				// m_bUsedForGameplay
+   false,				// m_bUsedForEdit
+   false,				// m_bUsedForDemonstration
+   false,				// m_bUsedForHowToPlay
+   "group6",			// m_szName
+   StepsType_guitar_solo6,	// m_StepsType
+   StyleType_TwoPlayersTwoSides,		// m_StyleType
+   7,				// m_iColsPerPlayer
+   {	// m_ColumnInfo[NUM_PLAYERS][MAX_COLS_PER_PLAYER];
+      {	// PLAYER_1
+         { TRACK_1,	-GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_2,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_3,	+GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_4,	-GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_5,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_6,	+GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_7,	+GUITAR_COL_SPACING*0.0f, NULL },
+      },
+      {	// PLAYER_2
+         { TRACK_1,	-GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_2,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_3,	+GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_4,	-GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_5,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_6,	+GUITAR_COL_SPACING*1.25f, NULL },
+         { TRACK_7,	+GUITAR_COL_SPACING*0.0f, NULL },
+      },
+   },
+   {	// m_iInputColumn[NUM_GameController][NUM_GameButton]
+      { 0, 1, 2, 3, 4, 5, 6, Style::END_MAPPING },
+      { 0, 1, 2, 3, 4, 5, 6, Style::END_MAPPING },
+   },
+   {	// m_iColumnDrawOrder[MAX_COLS_PER_PLAYER];
+      6,5,3,4,2,0,1
+   },
+   false, // m_bCanUseBeginnerHelper
+   false, // m_bLockDifficulties
+};
+*/
+
+static const Style *g_apGame_Guitar_Styles[] =
+{
+   &g_Style_Guitar_Solo,
+   &g_Style_Guitar_Versus,
+   nullptr
+};
+
+static const Game g_Game_Guitar =
+{
+   "guitar",						// gameName
+   g_apGame_Guitar_Styles,				// m_apStyles
+   false,						// m_bCountNotesSeparately
+   true, // m_bTickHolds
+   false, // m_PlayersHaveSeparateStyles
+   {						// m_InputScheme
+      "guitar",					// m_szName
+      NUM_GUITAR_BUTTONS,			// m_iButtonsPerController
+      {	// m_szButtonNames
+         { "Fret1",		GAME_BUTTON_START },
+         { "Fret2",		GAME_BUTTON_BACK },
+         { "Fret3",		GameButton_Invalid },
+         { "Fret4",		GameButton_Invalid },
+         { "Fret5",		GameButton_Invalid },
+         { "StrumDown",  GAME_BUTTON_DOWN },
+      },
+      &g_AutoKeyMappings_Guitar
+   },
+   {
+      { GameButtonType_Step },
+      { GameButtonType_Step },
+      { GameButtonType_Step },
+      { GameButtonType_Step },
+      { GameButtonType_Step },
+      { GameButtonType_Step },
+   },
+   // The new note types always map to TNS_W1, the misses here are to tighten the window for "slider" notes
+   // which are really just regular tap notes for solos
+   TNS_W1,	// m_mapW1To
+   TNS_W1,	// m_mapW2To
+   TNS_W1,	// m_mapW3To
+   TNS_Miss,	// m_mapW4To
+   TNS_Miss,	// m_mapW5To
+};
+
 static const Game *g_Games[] =
 {
 	&g_Game_Dance,
@@ -3229,6 +3500,7 @@ static const Game *g_Games[] =
 	&g_Game_Popn,
 	&g_Game_Lights,
 	&g_Game_Kickbox,
+   &g_Game_Guitar,
 };
 
 GameManager::GameManager()

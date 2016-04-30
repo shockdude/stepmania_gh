@@ -147,6 +147,9 @@ protected:
 	int GetClosestNonEmptyRowDirectional( int iStartRow, int iMaxRowsAhead, bool bAllowGraded, bool bForward ) const;
 	int GetClosestNonEmptyRow( int iNoteRow, int iMaxRowsAhead, int iMaxRowsBehind, bool bAllowGraded ) const;
 
+   void DoFretLogic( int col, int row, const RageTimer &tm, bool bRelease, bool bResetStrum );
+   bool IsChordHit( int row );
+   
 	std::string ApplyRandomAttack();
 
 	inline void HideNote( int col, int row )
@@ -204,7 +207,21 @@ protected:
 
 	float			m_fActiveRandomAttackStart;
 
-	std::vector<bool>	m_vbFretIsDown;
+   std::vector<bool>	m_vbFretIsDown;
+   // For HOPOs to read previous fret state
+   std::vector<bool>	m_vbPrevFrets;
+   // Number of frets being pressed currently
+   unsigned short int m_iFretsDown;
+   // Current top fret being held down, or the strum column if none are
+   int m_iTopFret;
+   // Column used for strumming, this is the last column in guitar mode, -1 otherwise
+   int m_iStrumCol;
+   // Last row of sucessful chord hit, saves a few calls in guitar mode
+   int m_iLastHitChordRow;
+   // Tells if the strum bar was pressed this frame
+   bool m_bStrumHitNow;
+   // Are HOPOs possible now?
+   bool m_bHOPOPossible;
 
 	std::vector<RageSound>	m_vKeysounds;
 
