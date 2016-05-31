@@ -285,7 +285,7 @@ void ReadBuf( const char *buf, int len, Song &outSong, Steps &outSteps, bool par
                // Change it to a normal gem
                for( int k=0; k<5; ++k )
                {
-                  if( bPrevNoteHOPO[k] && k != iNoteTrack && iNoteMark == iPrevNoteMark[k] )
+                  if( bPrevNoteHOPO[k] && k != iNoteTrack && iNoteMark - iPrevNoteMark[k] <= 1 )
                   {
                      if( iPrevNoteLength[k] ) // Previous note was a hold
                      {
@@ -302,13 +302,18 @@ void ReadBuf( const char *buf, int len, Song &outSong, Steps &outSteps, bool par
                 * on different tracks, AND this isn't the first note, make this a HOPO
                 * ...actually, the chart2mid2chart converter thingamabob has some rounding issues, so add 1 to the 16th note
                 * check just to catch all the things that should be HOPOs
+                * Also the notemarks could be off by 1 from each other even if they're in a chord
+                * At this point I really want to see the source of the mid2chart converter, it really is a mess
+                * ...and after a bit more research, chart2mid2chart stopped being used in 2007 in favor of Feedback
+                * time to see how Feedback works and stop rambling in comments
+                * Feedback is much more stable and accurate, the off by 1 error checking can be removed for HOPOs
                 */
                bool ShouldBeHOPO = false;
                for( int k=0; k<5; ++k )
                {
-                  if((iNoteMark - iPrevNoteMark[k] - 1 <= resolution / 4) && (iNoteTrack != iPrevNoteTrack) &&
+                  if((iNoteMark - iPrevNoteMark[k] <= resolution / 4) && (iNoteTrack != iPrevNoteTrack) &&
                      (iPrevNoteMark[k] != -1)) ShouldBeHOPO = true;
-                  if( iNoteMark == iPrevNoteMark[k] ) {
+                  if( iNoteMark - iPrevNoteMark[k] <= 1 ) {
                      ShouldBeHOPO = false;
                      break;
                   }
