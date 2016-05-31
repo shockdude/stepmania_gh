@@ -51,13 +51,15 @@ static void Nsis()
 
 		IniFile ini;
 		if(!ini.ReadFile(INSTALLER_LANGUAGES_DIR + s))
-			RageException::Throw("Error opening file for read.");
-		FOREACH_CONST_Child(&ini, child)
 		{
-			FOREACH_CONST_Attr(child, attr)
+			RageException::Throw("Error opening file for read.");
+		}
+		for (auto const *child: ini)
+		{
+			for (auto const &attr: child->m_attrs)
 			{
-				std::string sName = attr->first;
-				std::string sValue = attr->second->GetValue<std::string>();
+				std::string sName = attr.first;
+				std::string sValue = attr.second->GetValue<std::string>();
 				Rage::replace(sValue, "\\n", "$\\n");
 				std::string sLine = fmt::sprintf("LangString %s ${LANG_%s} \"%s\"", sName.c_str(), sLangNameUpper.c_str(), sValue.c_str());
 				out.PutLine(sLine);
@@ -102,7 +104,7 @@ static void Version()
 	#endif // WIN32
 }
 
-void CommandLineActions::Handle(LoadingWindow* pLW)
+void CommandLineActions::Handle(LoadingWindow*)
 {
 	CommandLineArgs args;
 	for(int i=0; i<g_argc; ++i)

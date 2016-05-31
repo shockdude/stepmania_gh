@@ -290,8 +290,7 @@ PrefsManager::PrefsManager() :
 	m_bThreadedInput		( "ThreadedInput",			true ),
 	m_bThreadedMovieDecode		( "ThreadedMovieDecode",		true ),
 	m_sTestInitialScreen		( "TestInitialScreen",			"" ),
-	m_bDebugLights			( "DebugLights",			false ),
-	m_bMonkeyInput			( "MonkeyInput",			false ),
+	m_bDebugLights(false),
 	m_sMachineName			( "MachineName",			"" ),
 	m_sCoursesToShowRanking		( "CoursesToShowRanking",		"" ),
 	m_MuteActions			( "MuteActions",			false ),
@@ -466,9 +465,10 @@ void PrefsManager::ReadGamePrefsFromIni( const std::string &sIni )
 {
 	IniFile ini;
 	if( !ini.ReadFile(sIni) )
+	{
 		return;
-
-	FOREACH_CONST_Child( &ini, section )
+	}
+	for (auto const *section: ini)
 	{
 		std::string section_name= section->GetName();
 		if( !Rage::starts_with(section_name, GAME_SECTION_PREFIX) )
@@ -555,7 +555,7 @@ std::string PrefsManager::GetPreferencesSection() const
 class LunaPrefsManager: public Luna<PrefsManager>
 {
 public:
-	static int GetPreference( T* p, lua_State *L )
+	static int GetPreference(T*, lua_State *L)
 	{
 		std::string sName = SArg(1);
 		IPreference *pPref = IPreference::GetPreferenceByName( sName );
@@ -569,7 +569,7 @@ public:
 		pPref->PushValue( L );
 		return 1;
 	}
-	static int SetPreference( T* p, lua_State *L )
+	static int SetPreference(T* p, lua_State *L)
 	{
 		std::string sName = SArg(1);
 
@@ -584,7 +584,7 @@ public:
 		pPref->SetFromStack( L );
 		COMMON_RETURN_SELF;
 	}
-	static int SetPreferenceToDefault( T* p, lua_State *L )
+	static int SetPreferenceToDefault(T* p, lua_State *L)
 	{
 		std::string sName = SArg(1);
 
@@ -599,7 +599,7 @@ public:
 		LOG->Trace( "Restored preference \"%s\" to default \"%s\"", sName.c_str(), pPref->ToString().c_str() );
 		COMMON_RETURN_SELF;
 	}
-	static int PreferenceExists( T* p, lua_State *L )
+	static int PreferenceExists(T*, lua_State *L)
 	{
 		std::string sName = SArg(1);
 

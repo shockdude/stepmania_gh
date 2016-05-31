@@ -496,6 +496,10 @@ void NewFieldColumn::calc_reverse_shift()
 		Message revmsg("ReverseChanged");
 		revmsg.SetParam("sign", reverse_scale_sign);
 		pass_message_to_heads(revmsg);
+		if(m_column == 0 && m_field != nullptr)
+		{
+			m_field->HandleMessage(revmsg);
+		}
 	}
 	static double const min_visible_scale= 0.1;
 	double visible_scale= fabs(reverse_scale);
@@ -868,6 +872,7 @@ void NewFieldColumn::draw_hold(QuantizedHoldRenderData& data,
 	hold_texture_handler tex_handler(note_size, head_y_offset, tail_y_offset, tex_top, tex_bottom, data);
 	double const body_start_render_y= apply_reverse_shift(tex_handler.body_start_y);
 	double const body_end_render_y= apply_reverse_shift(tex_handler.body_end_y);
+	float const color_scale= Rage::scale(note.note_iter->second.HoldResult.fLife, 0.f, 1.f, m_newskin->get_hold_gray_percent(), 1.f);
 	DISPLAY->ClearAllTextures();
 	DISPLAY->SetZTestMode(ZTEST_WRITE_ON_PASS);
 	DISPLAY->SetZWrite(true);
@@ -974,7 +979,7 @@ void NewFieldColumn::draw_hold(QuantizedHoldRenderData& data,
 		const Rage::Vector3 right_vert(
 			-render_left.x + curr_step.trans.pos.x, render_y -render_left.y,
 			-render_left.z + curr_step.trans.pos.z);
-		const Rage::Color color(1.0, 1.0, 1.0, curr_step.trans.alpha);
+		const Rage::Color color(color_scale, color_scale, color_scale, curr_step.trans.alpha);
 		const Rage::Color glow_color(1.0, 1.0, 1.0, curr_step.trans.glow);
 #define add_vert_strip_args verts_to_draw, left_vert, right_vert, color, glow_color, tex_left, tex_right
 		for(size_t i= 0; i < curr_step.tex_coords.size(); ++i)
@@ -1354,7 +1359,7 @@ void NewFieldColumn::build_render_lists()
 		{
 			if(first_non_visible_time > 0.0)
 			{
-				if(tn.occurs_at_second - first_non_visible_time > time_to_end_visible_notes)
+				if(tn.occurs_at_second > m_curr_second && tn.occurs_at_second - first_non_visible_time > time_to_end_visible_notes)
 				{
 					found_end_of_visible_notes= true;
 				}
@@ -1556,7 +1561,7 @@ void NewFieldColumn::draw_taps_internal()
 		double head_beat;
 		double tail_beat;
 		double head_second;
-		bool active= true;
+		bool active= false;
 		switch(tn.type)
 		{
 			case TapNoteType_Mine:
@@ -1621,6 +1626,22 @@ void NewFieldColumn::draw_taps_internal()
             break;
 			default:
 				part= NSTP_Tap;
+				if(m_newskin->get_use_hold_head())
+				{
+					switch(tn.highest_subtype_on_row)
+					{
+						case TapNoteSubType_Hold:
+							part= NewSkinTapPart_Invalid;
+							head_part= NSTOP_HoldHead;
+							break;
+						case TapNoteSubType_Roll:
+							part= NewSkinTapPart_Invalid;
+							head_part= NSTOP_RollHead;
+							break;
+						default:
+							break;
+					}
+				}
 				head_beat= tap_beat;
 				break;
 		}
@@ -1634,17 +1655,29 @@ void NewFieldColumn::draw_taps_internal()
 		}
 		else
 		{
-			// Put tails on the list first because they need to be under the heads.
-			set_tap_actor_info(acts[0], *this, m_newskin,
-				&NewSkinColumn::get_optional_actor,
-				&NewSkinColumn::get_player_optional_tap, tail_part, tn.pn, tail_beat,
-				tn.end_second, tapit.tail_y_offset, tap_beat, tap_second,
-				m_status.anim_percent, active, m_status.in_reverse);
-			set_tap_actor_info(acts[1], *this, m_newskin,
-				&NewSkinColumn::get_optional_actor,
-				&NewSkinColumn::get_player_optional_tap, head_part, tn.pn, head_beat,
-				head_second, tapit.y_offset, tap_beat, tap_second,
-				m_status.anim_percent, active, m_status.in_reverse);
+			// Handle the case where it's an obscenity instead of an actual hold.
+			if(tail_part == NewSkinTapOptionalPart_Invalid)
+			{
+				set_tap_actor_info(acts[0], *this, m_newskin,
+					&NewSkinColumn::get_optional_actor,
+					&NewSkinColumn::get_player_optional_tap, head_part, tn.pn, head_beat,
+					head_second, tapit.y_offset, tap_beat, tap_second,
+					m_status.anim_percent, active, m_status.in_reverse);
+			}
+			else
+			{
+				// Put tails on the list first because they need to be under the heads.
+				set_tap_actor_info(acts[0], *this, m_newskin,
+					&NewSkinColumn::get_optional_actor,
+					&NewSkinColumn::get_player_optional_tap, tail_part, tn.pn, tail_beat,
+					tn.end_second, tapit.tail_y_offset, tap_beat, tap_second,
+					m_status.anim_percent, active, m_status.in_reverse);
+				set_tap_actor_info(acts[1], *this, m_newskin,
+					&NewSkinColumn::get_optional_actor,
+					&NewSkinColumn::get_player_optional_tap, head_part, tn.pn, head_beat,
+					head_second, tapit.y_offset, tap_beat, tap_second,
+					m_status.anim_percent, active, m_status.in_reverse);
+			}
 		}
 		for(auto&& act : acts)
 		{
@@ -2098,7 +2131,9 @@ void NewField::set_note_data(NoteData* note_data, TimingData* timing, StepsType 
 	m_defective_mods.set_timing(m_timing_data);
 	m_defective_mods.set_num_pads(GAMEMAN->get_num_pads_for_stepstype(stype));
 	m_trans_mod.set_timing(m_timing_data);
-	for(auto&& moddable : {&m_fov_mod, &m_vanish_x_mod, &m_vanish_y_mod})
+	for(auto&& moddable : {&m_receptor_alpha, &m_receptor_glow,
+				&m_explosion_alpha, &m_explosion_glow,
+				&m_fov_mod, &m_vanish_x_mod, &m_vanish_y_mod})
 	{
 		moddable->set_timing(m_timing_data);
 	}
@@ -2403,38 +2438,39 @@ void NewField::reload_columns(NewSkinLoader const* new_loader, LuaReference& new
 
 	m_player_colors= m_newskin.m_player_colors;
 	m_field_width= 0.0;
-	Lua* L= LUA->Get();
-	lua_createtable(L, m_newskin.num_columns(), 0);
+	double leftmost= 0.0;
+	double rightmost= 0.0;
+	double auto_place_width= 0.0;
 	for(size_t i= 0; i < m_newskin.num_columns(); ++i)
 	{
 		double width= m_newskin.get_column(i)->get_width();
 		double padding= m_newskin.get_column(i)->get_padding();
-		lua_createtable(L, 0, 2);
-		lua_pushnumber(L, width);
-		lua_setfield(L, -2, "width");
-		lua_pushnumber(L, padding);
-		lua_setfield(L, -2, "padding");
-		lua_rawseti(L, -2, i+1);
-		m_field_width+= width;
-		m_field_width+= padding;
+		if(m_newskin.get_column(i)->get_use_custom_x())
+		{
+			double custom_x= m_newskin.get_column(i)->get_custom_x();
+			double hwp= (width + padding) * .5;
+			leftmost= std::min(leftmost, custom_x - hwp);
+			rightmost= std::max(rightmost, custom_x + hwp);
+		}
+		else
+		{
+			auto_place_width+= width;
+			auto_place_width+= padding;
+		}
 	}
-	Message width_msg("WidthSet");
-	width_msg.SetParam("width", get_field_width());
-	width_msg.SetParamFromStack(L, "columns");
-	PushSelf(L);
-	width_msg.SetParamFromStack(L, "field");
-	// Handle the width message after the columns have been created so that the
-	// board can fetch the columns. (intentionally duplicated comment)
-	LUA->Release(L);
+	double custom_width= rightmost - leftmost;
+	m_field_width= std::max(custom_width, auto_place_width);
 
 	clear_column_draw_entries();
-	double curr_x= (m_field_width * -.5);
+	double curr_x= (auto_place_width * -.5);
 	std::vector<NewFieldColumn> old_columns;
 	m_columns.swap(old_columns);
 	m_columns.resize(m_note_data->GetNumTracks());
 	// The column needs all of this info.
 	Message pn_msg("PlayerStateSet");
 	pn_msg.SetParam("PlayerNumber", m_pn);
+	Lua* L= LUA->Get();
+	lua_createtable(L, m_newskin.num_columns(), 0);
 	for(size_t i= 0; i < m_columns.size(); ++i)
 	{
 		NewSkinColumn* col= m_newskin.get_column(i);
@@ -2442,15 +2478,37 @@ void NewField::reload_columns(NewSkinLoader const* new_loader, LuaReference& new
 		// To put the column in the center, we add half the width of the current
 		// column, place the column, then add the other half of the width.  This
 		// allows columns to have different widths.
-		double halfw= (col->get_width() + col->get_padding()) * .5;
-		curr_x+= halfw;
+		double col_x= curr_x;
+		double width= col->get_width();
+		double padding= col->get_padding();
+		double wid_pad= width + padding;
+		if(col->get_use_custom_x())
+		{
+			col_x= col->get_custom_x();
+		}
+		else
+		{
+			col_x= curr_x + wid_pad * .5;
+		}
+		lua_createtable(L, 0, 2);
+		lua_pushnumber(L, width);
+		lua_setfield(L, -2, "width");
+		lua_pushnumber(L, padding);
+		lua_setfield(L, -2, "padding");
+		lua_pushnumber(L, col_x);
+		lua_setfield(L, -2, "x");
+		lua_rawseti(L, -2, i+1);
+
 		m_columns[i].set_column_info(this, i, col, &m_defective_mods, m_newskin,
-			&m_player_colors, m_note_data, m_timing_data, curr_x);
+			&m_player_colors, m_note_data, m_timing_data, col_x);
 		if(i < old_columns.size())
 		{
 			m_columns[i].take_over_mods(old_columns[i]);
 		}
-		curr_x+= halfw;
+		if(!col->get_use_custom_x())
+		{
+			curr_x+= wid_pad;
+		}
 		add_draw_entry(static_cast<int>(i), holds_child_index, holds_draw_order);
 		add_draw_entry(static_cast<int>(i), lifts_child_index, lifts_draw_order);
 		add_draw_entry(static_cast<int>(i), taps_child_index, taps_draw_order);
@@ -2460,6 +2518,12 @@ void NewField::reload_columns(NewSkinLoader const* new_loader, LuaReference& new
 			m_columns[i].set_defective_mode(m_in_defective_mode);
 		}
 	}
+	Message width_msg("WidthSet");
+	width_msg.SetParamFromStack(L, "columns");
+	width_msg.SetParam("width", get_field_width());
+	PushSelf(L);
+	width_msg.SetParamFromStack(L, "field");
+	LUA->Release(L);
 	vector<float> column_x;
 	column_x.reserve(m_columns.size());
 	for(auto&& col : m_columns)
@@ -2559,6 +2623,10 @@ void NewField::update_displayed_time(double beat, double second)
 	m_curr_beat= beat;
 	m_curr_second= second;
 	m_mod_manager.update(beat, second);
+	if(m_in_defective_mode)
+	{
+		m_defective_mods.update(m_curr_beat, m_curr_second);
+	}
 	for(auto&& col : m_columns)
 	{
 		col.update_displayed_time(beat, second);
@@ -2595,7 +2663,6 @@ void NewField::update_displayed_time(double beat, double second)
 	}
 	else
 	{
-		m_defective_mods.update(m_curr_beat, m_curr_second);
 		SetFOV(45.0);
 		double vanish_x= Rage::scale(m_defective_mods.get_skew(), 0.1f, 1.0f, GetParent()->GetX(), SCREEN_CENTER_X);
 		double vanish_y= SCREEN_CENTER_Y;

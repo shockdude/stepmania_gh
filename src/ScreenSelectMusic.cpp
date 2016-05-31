@@ -1898,8 +1898,9 @@ void ScreenSelectMusic::AfterMusicChange()
 		}
 
 		if ( PREFSMAN->m_bShowBanners )
+		{
 			g_sBannerPath = pSong->GetBannerPath();
-
+		}
 		g_sCDTitlePath = pSong->GetCDTitlePath();
 		g_bWantFallbackCdTitle = true;
 
@@ -1911,9 +1912,13 @@ void ScreenSelectMusic::AfterMusicChange()
 		const Course *lCourse = m_MusicWheel.GetSelectedCourse();
 		const Style *pStyle = nullptr;
 		if( CommonMetrics::AUTO_SET_STYLE )
+		{
 			pStyle = pCourse->GetCourseStyle( GAMESTATE->m_pCurGame, GAMESTATE->GetNumSidesJoined() );
+		}
 		if( pStyle == nullptr )
+		{
 			pStyle = GAMESTATE->GetCurrentStyle(PLAYER_INVALID);
+		}
 		lCourse->GetTrails( m_vpTrails, pStyle->m_StepsType );
 
 		m_sSampleMusicToPlay = m_sCourseMusicPath;

@@ -188,6 +188,15 @@ return function(button_list, stepstype)
 			-- column.  A padding value of 2 means 1 pixel on each side.
 			-- The default is 0.
 			padding= 0,
+			-- If custom_x is set to a number, this column will be placed at that
+			-- position instead of automatically positioned by the field.
+			-- custom_x= 0,
+			-- hold_gray_percent controls how far towards black a released hold
+			-- turns.  0 means the hold turns completely black.
+			hold_gray_percent= .25,
+			-- If a roll and a hold start on the same row as a tap, and
+			-- use_hold_heads_for_taps_on_row is true, the tap will be a roll head.
+			use_hold_heads_for_taps_on_row= false,
 			-- anim_time is used to specify how long the animation of the taps
 			-- lasts.  anim_time is optional, if it isn't set, the engine will set
 			-- it to 1.

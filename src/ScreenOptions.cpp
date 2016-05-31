@@ -785,7 +785,7 @@ void ScreenOptions::AfterChangeValueOrRow( PlayerNumber pn )
 			break;
 		default: break;
 	}
-	if( pText->GetText() != text )
+	if( pText != nullptr && pText->GetText() != text )
 	{
 		pText->FinishTweening();
 		ON_COMMAND( pText );
@@ -1172,7 +1172,7 @@ void ScreenOptions::ChangeValueInRowRelative( int iRow, PlayerNumber pn, int iDe
 	this->AfterChangeValueInRow( iRow, pn );
 }
 
-void ScreenOptions::AfterChangeValueInRow( int iRow, PlayerNumber pn )
+void ScreenOptions::AfterChangeValueInRow(int, PlayerNumber pn)
 {
 	AfterChangeValueOrRow( pn );
 }

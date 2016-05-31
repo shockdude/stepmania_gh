@@ -1153,7 +1153,7 @@ void Profile::IncrementCategoryPlayCount( StepsType st, RankingCategory rc )
 	if( X==nullptr ) LOG->Warn("Failed to read section " #X); \
 	else Load##X##FromNode(X); }
 
-void Profile::LoadCustomFunction( std::string sDir )
+void Profile::LoadCustomFunction(std::string dir, PlayerNumber pn)
 {
 	/* Get the theme's custom load function:
 	 *   [Profile]
@@ -1166,11 +1166,19 @@ void Profile::LoadCustomFunction( std::string sDir )
 
 	// Pass profile and profile directory as arguments
 	this->PushSelf(L);
-	LuaHelpers::Push(L, sDir);
+	LuaHelpers::Push(L, dir);
+	if(pn == PlayerNumber_Invalid)
+	{
+		lua_pushnil(L);
+	}
+	else
+	{
+		Enum::Push(L, pn);
+	}
 
 	// Run it
 	std::string Error= "Error running CustomLoadFunction: ";
-	LuaHelpers::RunScriptOnStack(L, Error, 2, 0, true);
+	LuaHelpers::RunScriptOnStack(L, Error, 3, 0, true);
 
 	LUA->Release(L);
 }
@@ -1258,7 +1266,7 @@ ProfileLoadResult Profile::LoadAllFromDir( std::string sDir, bool bRequireSignat
 	if (ret != ProfileLoadResult_Success)
 		return ret;
 
-	LoadCustomFunction( sDir );
+	LoadCustomFunction(sDir, PlayerNumber_Invalid);
 
 	return ProfileLoadResult_Success;
 }
@@ -1872,7 +1880,7 @@ void Profile::LoadGeneralDataFromNode( const XNode* pNode )
 		const XNode* pDefaultModifiers = pNode->GetChild("DefaultModifiers");
 		if( pDefaultModifiers )
 		{
-			FOREACH_CONST_Child( pDefaultModifiers, game_type )
+			for (auto const *game_type: *pDefaultModifiers)
 			{
 				game_type->GetTextValue( m_sDefaultModifiers[game_type->GetName()] );
 			}
@@ -1907,23 +1915,26 @@ void Profile::LoadGeneralDataFromNode( const XNode* pNode )
 		const XNode* pUnlocks = pNode->GetChild("Unlocks");
 		if( pUnlocks )
 		{
-			FOREACH_CONST_Child( pUnlocks, unlock )
+			for (auto const *unlock: *pUnlocks)
 			{
 				std::string sUnlockEntryID;
 				if( !unlock->GetAttrValue("UnlockEntryID",sUnlockEntryID) )
+				{
 					continue;
-
+				}
 				if( !UNLOCK_AUTH_STRING.GetValue().empty() )
 				{
 					std::string sUnlockAuth;
 					if( !unlock->GetAttrValue("Auth", sUnlockAuth) )
+					{
 						continue;
-
+					}
 					std::string sExpectedUnlockAuth = BinaryToHex( CRYPTMAN->GetMD5ForString(sUnlockEntryID + UNLOCK_AUTH_STRING.GetValue()) );
 					if( sUnlockAuth != sExpectedUnlockAuth )
+					{
 						continue;
+					}
 				}
-
 				m_UnlockedEntryIDs.insert( sUnlockEntryID );
 			}
 		}
@@ -1940,17 +1951,19 @@ void Profile::LoadGeneralDataFromNode( const XNode* pNode )
 		const XNode* pNumSongsPlayedByStyle = pNode->GetChild("NumSongsPlayedByStyle");
 		if( pNumSongsPlayedByStyle )
 		{
-			FOREACH_CONST_Child( pNumSongsPlayedByStyle, style )
+			for (auto const *style: *pNumSongsPlayedByStyle)
 			{
 				if( style->GetName() != "Style" )
+				{
 					continue;
-
+				}
 				StyleID sID;
 				sID.LoadFromNode( style );
 
 				if( !sID.IsValid() )
+				{
 					WARN_AND_CONTINUE;
-
+				}
 				style->GetTextValue( m_iNumSongsPlayedByStyle[sID] );
 			}
 		}
@@ -2156,11 +2169,12 @@ void Profile::LoadSongScoresFromNode( const XNode* pSongScores )
 
 	ASSERT( pSongScores->GetName() == "SongScores" );
 
-	FOREACH_CONST_Child( pSongScores, pSong )
+	for (auto const *pSong: *pSongScores)
 	{
 		if( pSong->GetName() != "Song" )
+		{
 			continue;
-
+		}
 		SongID songID;
 		songID.LoadFromNode( pSong );
 		// Allow invalid songs so that scores aren't deleted for people that use
@@ -2168,20 +2182,23 @@ void Profile::LoadSongScoresFromNode( const XNode* pSongScores )
 		//if( !songID.IsValid() )
 		//	continue;
 
-		FOREACH_CONST_Child( pSong, pSteps )
+		for (auto const *pSteps: *pSong)
 		{
 			if( pSteps->GetName() != "Steps" )
+			{
 				continue;
-
+			}
 			StepsID stepsID;
 			stepsID.LoadFromNode( pSteps );
 			if( !stepsID.IsValid() )
+			{
 				WARN_AND_CONTINUE;
-
+			}
 			const XNode *pHighScoreListNode = pSteps->GetChild("HighScoreList");
 			if( pHighScoreListNode == nullptr )
+			{
 				WARN_AND_CONTINUE;
-
+			}
 			HighScoreList &hsl = m_SongHighScores[songID].m_StepsHighScores[stepsID].hsl;
 			hsl.LoadFromNode( pHighScoreListNode );
 		}
@@ -2238,11 +2255,12 @@ void Profile::LoadCourseScoresFromNode( const XNode* pCourseScores )
 	vector<Course*> vpAllCourses;
 	SONGMAN->GetAllCourses( vpAllCourses, true );
 
-	FOREACH_CONST_Child( pCourseScores, pCourse )
+	for (auto const *pCourse: *pCourseScores)
 	{
 		if( pCourse->GetName() != "Course" )
+		{
 			continue;
-
+		}
 		CourseID courseID;
 		courseID.LoadFromNode( pCourse );
 		// Allow invalid courses so that scores aren't deleted for people that use
@@ -2278,21 +2296,23 @@ void Profile::LoadCourseScoresFromNode( const XNode* pCourseScores )
 			}
 		}
 
-
-		FOREACH_CONST_Child( pCourse, pTrail )
+		for (auto const *pTrail: *pCourse)
 		{
 			if( pTrail->GetName() != "Trail" )
+			{
 				continue;
-
+			}
 			TrailID trailID;
 			trailID.LoadFromNode( pTrail );
 			if( !trailID.IsValid() )
+			{
 				WARN_AND_CONTINUE;
-
+			}
 			const XNode *pHighScoreListNode = pTrail->GetChild("HighScoreList");
 			if( pHighScoreListNode == nullptr )
+			{
 				WARN_AND_CONTINUE;
-
+			}
 			HighScoreList &hsl = m_CourseHighScores[courseID].m_TrailHighScores[trailID].hsl;
 			hsl.LoadFromNode( pHighScoreListNode );
 		}
@@ -2341,40 +2361,49 @@ void Profile::LoadCategoryScoresFromNode( const XNode* pCategoryScores )
 
 	ASSERT( pCategoryScores->GetName() == "CategoryScores" );
 
-	FOREACH_CONST_Child( pCategoryScores, pStepsType )
+	for (auto const *pStepsType: *pCategoryScores)
 	{
 		if( pStepsType->GetName() != "StepsType" )
+		{
 			continue;
-
+		}
 		std::string str;
 		if( !pStepsType->GetAttrValue( "Type", str ) )
+		{
 			WARN_AND_CONTINUE;
+		}
 		StepsType st = GAMEMAN->StringToStepsType( str );
 		if( st == StepsType_Invalid )
+		{
 			WARN_AND_CONTINUE_M( str );
-
-		FOREACH_CONST_Child( pStepsType, pRadarCategory )
+		}
+		for (auto const *pRadarCategory: *pStepsType)
 		{
 			if( pRadarCategory->GetName() != "RankingCategory" )
+			{
 				continue;
-
+			}
 			if( !pRadarCategory->GetAttrValue( "Type", str ) )
+			{
 				WARN_AND_CONTINUE;
+			}
 			RankingCategory rc = StringToRankingCategory( str );
 			if( rc == RankingCategory_Invalid )
+			{
 				WARN_AND_CONTINUE_M( str );
-
+			}
 			const XNode *pHighScoreListNode = pRadarCategory->GetChild("HighScoreList");
 			if( pHighScoreListNode == nullptr )
+			{
 				WARN_AND_CONTINUE;
-
+			}
 			HighScoreList &hsl = this->GetCategoryHighScoreList( st, rc );
 			hsl.LoadFromNode( pHighScoreListNode );
 		}
 	}
 }
 
-void Profile::SaveStatsWebPageToDir( std::string sDir ) const
+void Profile::SaveStatsWebPageToDir(std::string) const
 {
 	ASSERT( PROFILEMAN != nullptr );
 }
@@ -2395,11 +2424,12 @@ void Profile::LoadScreenshotDataFromNode( const XNode* pScreenshotData )
 	CHECKPOINT_M("Loading the node containing screenshot data.");
 
 	ASSERT( pScreenshotData->GetName() == "ScreenshotData" );
-	FOREACH_CONST_Child( pScreenshotData, pScreenshot )
+	for (auto const *pScreenshot: *pScreenshotData)
 	{
 		if( pScreenshot->GetName() != "Screenshot" )
+		{
 			WARN_AND_CONTINUE_M( pScreenshot->GetName() );
-
+		}
 		Screenshot ss;
 		ss.LoadFromNode( pScreenshot );
 
@@ -2429,18 +2459,22 @@ void Profile::LoadCalorieDataFromNode( const XNode* pCalorieData )
 	CHECKPOINT_M("Loading the node containing calorie data.");
 
 	ASSERT( pCalorieData->GetName() == "CalorieData" );
-	FOREACH_CONST_Child( pCalorieData, pCaloriesBurned )
+	for (auto const *pCaloriesBurned: *pCalorieData)
 	{
 		if( pCaloriesBurned->GetName() != "CaloriesBurned" )
+		{
 			WARN_AND_CONTINUE_M( pCaloriesBurned->GetName() );
-
+		}
 		std::string sDate;
 		if( !pCaloriesBurned->GetAttrValue("Date",sDate) )
+		{
 			WARN_AND_CONTINUE;
+		}
 		DateTime date;
 		if( !date.FromString(sDate) )
+		{
 			WARN_AND_CONTINUE_M( sDate );
-
+		}
 		float fCaloriesBurned = 0;
 
 		pCaloriesBurned->GetTextValue(fCaloriesBurned);

@@ -1450,7 +1450,10 @@ void NoteDisplay::DrawTap(const TapNote& tn,
 	{
 		Message msg( "SetAttack" );
 		msg.SetParam( "Modifiers", tn.sAttackModifiers );
-		pActor->HandleMessage( msg );
+		if (pActor != nullptr) // Should never be nullptr at this point.
+		{
+			pActor->HandleMessage( msg );
+		}
 	}
 
 	const float fYOffset = ArrowEffects::GetYOffset( m_pPlayerState, column_args.column, fBeat );
@@ -1458,7 +1461,9 @@ void NoteDisplay::DrawTap(const TapNote& tn,
 	DrawActor(tn, pActor, part, field_args, column_args, fYOffset, fBeat, bIsAddition, fPercentFadeToFail, 1.0f, false);
 
 	if( tn.type == TapNoteType_Attack )
+	{
 		pActor->PlayCommand( "UnsetAttack" );
+	}
 }
 
 void NoteColumnRenderer::UpdateReceptorGhostStuff(Actor* receptor) const

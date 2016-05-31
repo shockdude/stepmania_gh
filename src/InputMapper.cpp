@@ -68,7 +68,12 @@ static const AutoMappings g_DefaultKeyMappings = AutoMappings(
 	AutoMappingEntry( 0, KEY_KP_C0,	GAME_BUTTON_SELECT,	true ),
 	AutoMappingEntry( 0, KEY_HYPHEN,	GAME_BUTTON_BACK,	true ), // laptop keyboards.
 	AutoMappingEntry( 0, KEY_F1,	GAME_BUTTON_COIN,	false ),
-	AutoMappingEntry( 0, KEY_SCRLLOCK,	GAME_BUTTON_OPERATOR,	false )
+	AutoMappingEntry( 0, KEY_SCRLLOCK,	GAME_BUTTON_OPERATOR,	false ),
+#ifdef MACOSX
+	AutoMappingEntry( 0, KEY_F13, GAME_BUTTON_SCREENSHOT, false )
+#else
+	AutoMappingEntry( 0, KEY_PRTSC, GAME_BUTTON_SCREENSHOT, false )
+#endif
 );
 
 void InputMapper::AddDefaultMappingsForCurrentGameIfUnmapped()
@@ -1193,6 +1198,7 @@ static const InputScheme::GameButtonInfo g_CommonGameButtonInfo[] =
 	{ "Back",	GAME_BUTTON_BACK },
 	{ "Coin",	GAME_BUTTON_COIN },
 	{ "Operator",	GAME_BUTTON_OPERATOR },
+	{ "Screenshot",	GAME_BUTTON_SCREENSHOT },
 	{ "EffectUp",	GAME_BUTTON_EFFECT_UP },
 	{ "EffectDown",	GAME_BUTTON_EFFECT_DOWN },
 };
@@ -1272,11 +1278,11 @@ void InputMappings::ReadMappings( const InputScheme *pInputScheme, std::string s
 
 	if( Key )
 	{
-		FOREACH_CONST_Attr( Key, i )
+		for (auto const &i: Key->m_attrs)
 		{
-			const std::string &name = i->first;
+			const std::string &name = i.first;
 			std::string value;
-			i->second->GetValue( value );
+			i.second->GetValue( value );
 
 			GameInput GameI;
 			GameI.FromString( pInputScheme, name );

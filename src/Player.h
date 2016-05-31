@@ -45,6 +45,7 @@ public:
 	~Player();
 
 	virtual void Update( float fDeltaTime );
+	virtual bool EarlyAbortDraw() const;
 	virtual void DrawPrimitives();
 	// DrawNoteFieldBoard exists so that the board can be drawn underneath
 	// theme elements like score. -Kyz
@@ -53,6 +54,7 @@ public:
 	// rewritten. -Kyz
 	void SetSpeedFromPlayerOptions();
 	void SetNoteFieldToEditMode();
+	void update_displayed_time();
 
 	struct TrackRowTapNote
 	{

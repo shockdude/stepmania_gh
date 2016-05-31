@@ -288,7 +288,7 @@ void ScreenDebugOverlay::Init()
 		this->AddChild( p );
 	}
 
-	auto onEachLine = [this](IDebugLine *line) {
+	auto onEachLine = [this](IDebugLine *) {
 		{
 			BitmapText *bt = new BitmapText;
 			bt->SetName( "ButtonText" );
@@ -751,21 +751,10 @@ class DebugLineHalt : public IDebugLine
 class DebugLineLightsDebug : public IDebugLine
 {
 	virtual std::string GetDisplayTitle() { return LIGHTS_DEBUG.GetValue(); }
-	virtual bool IsEnabled() { return PREFSMAN->m_bDebugLights.Get(); }
+	virtual bool IsEnabled() { return PREFSMAN->m_bDebugLights; }
 	virtual void DoAndLog( std::string &sMessageOut )
 	{
-		PREFSMAN->m_bDebugLights.Set( !PREFSMAN->m_bDebugLights );
-		IDebugLine::DoAndLog( sMessageOut );
-	}
-};
-
-class DebugLineMonkeyInput : public IDebugLine
-{
-	virtual std::string GetDisplayTitle() { return MONKEY_INPUT.GetValue(); }
-	virtual bool IsEnabled() { return PREFSMAN->m_bMonkeyInput.Get(); }
-	virtual void DoAndLog( std::string &sMessageOut )
-	{
-		PREFSMAN->m_bMonkeyInput.Set( !PREFSMAN->m_bMonkeyInput );
+		PREFSMAN->m_bDebugLights= !PREFSMAN->m_bDebugLights;
 		IDebugLine::DoAndLog( sMessageOut );
 	}
 };
@@ -1308,7 +1297,7 @@ class DebugLineForceCrash : public IDebugLine
 	virtual std::string GetDisplayTitle() { return FORCE_CRASH.GetValue(); }
 	virtual std::string GetDisplayValue() { return std::string(); }
 	virtual bool IsEnabled() { return false; }
-	virtual void DoAndLog( std::string &sMessageOut ) { FAIL_M("DebugLineCrash"); }
+	virtual void DoAndLog( std::string & ) { FAIL_M("DebugLineCrash"); }
 };
 
 class DebugLineUptime : public IDebugLine
@@ -1316,7 +1305,7 @@ class DebugLineUptime : public IDebugLine
 	virtual std::string GetDisplayTitle() { return UPTIME.GetValue(); }
 	virtual std::string GetDisplayValue() { return SecondsToMMSSMsMsMs(RageTimer::GetTimeSinceStart()); }
 	virtual bool IsEnabled() { return false; }
-	virtual void DoAndLog( std::string &sMessageOut ) {}
+	virtual void DoAndLog( std::string & ) {}
 };
 
 /* #ifdef out the lines below if you don't want them to appear on certain
@@ -1332,7 +1321,6 @@ DECLARE_ONE( DebugLineCoinMode );
 DECLARE_ONE( DebugLineSlow );
 DECLARE_ONE( DebugLineHalt );
 DECLARE_ONE( DebugLineLightsDebug );
-DECLARE_ONE( DebugLineMonkeyInput );
 DECLARE_ONE( DebugLineStats );
 DECLARE_ONE( DebugLineVsync );
 DECLARE_ONE( DebugLineAllowMultitexture );

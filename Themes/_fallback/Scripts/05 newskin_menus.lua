@@ -1,3 +1,27 @@
+shown_noteskins= create_lua_config{
+	name= "shown noteskins", file= "shown_noteskins.lua", default= {},
+	match_depth= 0, use_global_as_default= true}
+shown_noteskins:load()
+
+add_standard_lua_config_save_load_hooks(shown_noteskins)
+
+-- The config actually stores true for noteskins that need to be hidden,
+-- because that seems more resilient to the player adding and removing
+-- noteskins from the data folders.
+
+function filter_noteskin_list_with_shown_config(pn, skin_list)
+	local config= shown_noteskins:get_data(pn)
+	local skinny= 1
+	while skinny <= #skin_list do
+		if config[skin_list[skinny]] then
+			table.remove(skin_list, skinny)
+		else
+			skinny= skinny + 1
+		end
+	end
+	return skin_list
+end
+
 function find_current_stepstype(pn)
 	local steps= GAMESTATE:GetCurrentSteps(pn)
 	if steps then
@@ -18,15 +42,49 @@ function find_current_stepstype(pn)
 	return "StepsType_Dance_Single"
 end
 
-nesty_option_menus.newskins= {
+nesty_option_menus.shown_noteskins= {
+	type= "menu",
 	__index= {
-		disallow_unset= true,
+		initialize= function(self, pn, extra)
+			self.pn= pn
+			self.name= extra.name
+			self.all_noteskin_names= NEWSKIN:get_all_skin_names()
+			self.shown_config= shown_noteskins:get_data(self.pn)
+			self.info_set= {nesty_menu_up_element}
+			for i, skin_name in ipairs(self.all_noteskin_names) do
+				local show= not self.shown_config[skin_name]
+				self.info_set[#self.info_set+1]= {text= skin_name, type= "bool", value= show}
+			end
+			self.cursor_pos= 1
+		end,
+		destructor= function(self)
+			shown_noteskins:save(self.pn)
+		end,
+		set_status= function(self)
+			self.display:set_heading(self.name)
+			self.display:set_status("")
+		end,
+		interpret_start= function(self)
+			local info= self.info_set[self.cursor_pos]
+			shown_noteskins:set_dirty(self.pn)
+			local skin_name= info.text
+			self.shown_config[skin_name]= not self.shown_config[skin_name]
+			info.value= not self.shown_config[skin_name]
+			self:update_el_value(self.cursor_pos, info.value)
+			return true
+		end,
+}}
+
+nesty_option_menus.newskins= {
+	type= "menu",
+	__index= {
 		scroll_to_move_on_start= true,
 		initialize= function(self, pn)
 			self.pn= pn
 			self.cursor_pos= 1
 			self.stepstype= find_current_stepstype(pn)
-			self.ops= NEWSKIN:get_skin_names_for_stepstype(self.stepstype)
+			self.ops= filter_noteskin_list_with_shown_config(
+				pn, NEWSKIN:get_skin_names_for_stepstype(self.stepstype))
 			self.player_skin= PROFILEMAN:GetProfile(pn):get_preferred_noteskin(self.stepstype)
 			local function find_matching_newskin()
 				for ni, nv in ipairs(self.ops) do
@@ -38,10 +96,10 @@ nesty_option_menus.newskins= {
 				return nil
 			end
 			self.selected_skin= find_matching_newskin()
-			self.info_set= {up_element()}
+			self.info_set= {nesty_menu_up_element}
 			for ni, nv in ipairs(self.ops) do
 				self.info_set[#self.info_set+1]= {
-					text= nv, underline= ni == self.selected_skin}
+					text= nv, value= ni == self.selected_skin, type= "bool"}
 			end
 		end,
 		interpret_start= function(self)
@@ -49,13 +107,13 @@ nesty_option_menus.newskins= {
 			local info= self.info_set[self.cursor_pos]
 			if self.ops[ops_pos] then
 				for i, tinfo in ipairs(self.info_set) do
-					if i ~= self.cursor_pos and tinfo.underline then
-						self:update_el_underline(i, false)
+					if i ~= self.cursor_pos and tinfo.value then
+						self:update_el_value(i, false)
 					end
 				end
 				self.player_skin= self.ops[ops_pos]
 				PROFILEMAN:GetProfile(self.pn):set_preferred_noteskin(self.stepstype, self.player_skin)
-				self:update_el_underline(self.cursor_pos, true)
+				self:update_el_value(self.cursor_pos, true)
 				self:set_status()
 				MESSAGEMAN:Broadcast("NewskinChanged", {pn= self.pn})
 				return true
@@ -65,7 +123,7 @@ nesty_option_menus.newskins= {
 		end,
 		set_status= function(self)
 			self.display:set_heading("Newskin")
-			self.display:set_display(self.player_skin)
+			self.display:set_status(self.player_skin)
 		end
 }}
 
@@ -114,8 +172,9 @@ local function noteskin_param_float_val(param_name, param_section, type_info, de
 	end
 	local translation= get_noteskin_param_translation(param_name, type_info)
 	return {
-		name= translation.title, meta= nesty_option_menus.adjustable_float,
+		name= translation.title, menu= nesty_option_menus.adjustable_float,
 		explanation= translation.explanation,
+		value= function() return param_section[param_name] end,
 		args= {
 			name= translation.title, min_scale= min_scale, scale= 0,
 			max_scale= max_scale, reset_value= default_val,
@@ -131,27 +190,29 @@ local function noteskin_param_choice_val(param_name, param_section, type_info)
 	local translation= get_noteskin_param_translation(param_name, type_info)
 	for i, choice in ipairs(type_info.choices) do
 		eles[#eles+1]= {
+			type= "choice",
 			name= translation.choices[i], explanation= translation.explanation,
-			meta= "execute", execute= function(pn)
+			execute= function(pn)
 				param_section[param_name]= choice
 			end,
-			underline= function(pn)
+			value= function(pn)
 				return param_section[param_name] == choice
 			end,
 		}
 	end
 	return {name= translation.title, explanation= translation.explanation,
-					args= eles, meta= nesty_option_menus.menu}
+					value= param_section[param_name],
+					args= eles, menu= nesty_option_menus.menu}
 end
 local function noteskin_param_bool_val(param_name, param_section, type_info)
 	local translation= get_noteskin_param_translation(param_name, type_info)
 	return {
+		type= "bool",
 		name= translation.title, explanation= translation.explanation,
-		meta= "execute", translatable= false,
-		execute= function(pn)
+		translatable= false, execute= function(pn)
 			param_section[param_name]= not param_section[param_name]
 		end,
-		underline= function(pn)
+		value= function(pn)
 			return param_section[param_name]
 		end,
 	}
@@ -170,7 +231,7 @@ local function gen_noteskin_param_submenu(pn, param_section, type_info, skin_def
 				end
 			end
 			if field_type == "table" then
-				submenu.meta= nesty_option_menus.menu
+				submenu.menu= nesty_option_menus.menu
 				local menu_args= {}
 				gen_noteskin_param_submenu(pn, param_section[field], info, skin_defaults[field], menu_args)
 				submenu.args= menu_args

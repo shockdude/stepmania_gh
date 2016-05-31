@@ -1587,22 +1587,35 @@ void Player::ApplyWaitingTransforms()
 	m_pPlayerState->m_ModsToApply.clear();
 }
 
-void Player::DrawPrimitives()
+// update_displayed_time is outside of DrawPrimitives because ScreenGameplay
+// calls Player::Draw multiple times to put the notefield board underneath
+// other things while having the notes above those things.
+// This way, update_displayed_time only occurs once, instead of twice per
+// frame.
+// update_displayed_time must be called by the thing that contains the Player
+// before drawing it to update the field.
+// -Kyz
+void Player::update_displayed_time()
 {
-	// TODO: Remove use of PlayerNumber.
-	PlayerNumber pn = m_pPlayerState->m_PlayerNumber;
-
-	// May have both players in doubles (for battle play); only draw primary player.
-	if( GAMESTATE->GetCurrentStyle(GetPlayerState()->m_PlayerNumber)->m_StyleType == StyleType_OnePlayerTwoSides  &&
-		pn != GAMESTATE->GetMasterPlayerNumber() )
-		return;
-
 	if(m_new_field != nullptr)
 	{
 		SongPosition const& disp_pos= m_pPlayerState->GetDisplayedPosition();
 		m_new_field->update_displayed_time(disp_pos.m_fSongBeatVisible, disp_pos.m_fMusicSecondsVisible);
 	}
+}
 
+bool Player::EarlyAbortDraw() const
+{
+	// TODO: Remove use of PlayerNumber.
+	PlayerNumber pn = m_pPlayerState->m_PlayerNumber;
+	// May have both players in doubles (for battle play); only draw primary player.
+	return (GAMESTATE->GetCurrentStyle(pn)->m_StyleType == StyleType_OnePlayerTwoSides  &&
+		pn != GAMESTATE->GetMasterPlayerNumber()) ||
+		!HasVisibleParts() || ActorFrame::EarlyAbortDraw();
+}
+
+void Player::DrawPrimitives()
+{
 	bool draw_notefield= m_new_field && !IsOniDead();
 
 	if(m_drawing_notefield_board || m_being_drawn_by_proxy)

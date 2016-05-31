@@ -786,7 +786,7 @@ void SSCLoader::ProcessLabels( TimingData &out, const std::string sParam )
 	}
 }
 
-void SSCLoader::ProcessCombos( TimingData &out, const std::string line, const int rowsPerBeat )
+void SSCLoader::ProcessCombos( TimingData &out, const std::string line, const int )
 {
 	auto arrayComboExpressions = Rage::split( line, "," );
 
@@ -1154,7 +1154,9 @@ bool SSCLoader::LoadEditFromMsd(const MsdFile &msd,
 				if(reused_steps_info.ssc_format)
 				{
 					if(reused_steps_info.has_own_timing)
-					{ pNewNotes->m_Timing = stepsTiming; }
+					{
+						pNewNotes->m_Timing = stepsTiming;
+					}
 					pNewNotes->SetSMNoteData(sParams[1]);
 					pNewNotes->TidyUpData();
 				}
