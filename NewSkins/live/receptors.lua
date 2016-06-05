@@ -1,12 +1,14 @@
 return function(button_list, stepstype, skin_parameters)
 	local ret= {}
 	local rots= {}
-	-- Adding dance buttons temporarily to test skin
 	local tap_redir= {
-		Fret1= "Fret1", Fret2= "Fret2", Fret3= "Fret3", Fret4= "Fret4", 
+		Fret1= "White", Fret2= "White", Fret3= "White", Fret4= "Black", 
 		-- Strum receptor is hidden, so it doesn't matter
-		Fret5= "Fret5", Fret6= "Fret1", StrumDown= "Strum", Left= "Fret1",
-		Down= "Fret2", Up= "Fret3", Right= "Fret4"
+		Fret5= "Black", Fret6= "Black", StrumDown= "Strum"
+	}
+	local x_reposition= {
+		Fret1= 18, Fret2= 54, Fret3= 90, Fret4= -90, 
+		Fret5= -54, Fret6= -18, StrumDown= -108
 	}
 	for i, button in ipairs(button_list) do
 		ret[i]= Def.ActorFrame{

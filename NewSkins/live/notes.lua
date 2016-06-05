@@ -1,24 +1,21 @@
 local skin_name= Var("skin_name")
--- Thank you Kyzentun for your continual improvements to the newskins
 return function(button_list, stepstype)
 	local tap_redir= {
-		Fret1= "Fret1", Fret2= "Fret2", Fret3= "Fret3", Fret4= "Fret4", 
-		Fret5= "Fret5", Fret6= "Fret1", StrumDown= "Strum", Left= "Fret1",
-		Down= "Fret2", Up= "Fret3", Right= "Fret4"
+		Fret1= "White", Fret2= "White", Fret3= "White", Fret4= "Black", 
+		Fret5= "Black", Fret6= "Black", StrumDown= "Strum"
 	}
 	local tap_width= {
-		Fret1= 52, Fret2= 52, Fret3= 52, Fret4= 52, 
-		Fret5= 52, Fret6= 52, StrumDown= 260, Left= 58,
-		Down= 58, Up= 58, Right= 58
+		-- spacing is especially weird due to how the columns are supposed to line up
+		Fret1= 36, Fret2= 36, Fret3= 36, Fret4= 36, 
+		Fret5= 36, Fret6= 36, StrumDown= 1
 	}
 	local hold_redir= {
 		Fret1= "Fret", Fret2= "Fret", Fret3= "Fret", Fret4= "Fret", 
-		Fret5= "Fret", Fret6= "Fret", StrumDown= "Strum", Left= "Fret",
-		Down= "Fret", Up= "Fret", Right= "Fret"
+		Fret5= "Fret", Fret6= "Fret", StrumDown= "Strum"
 	}
-	local x_reposition= {
-		Fret1= -104, Fret2= -52, Fret3= 0, Fret4= 52, Fret5= 104, StrumDown= 0,
-		Left= -87, Down= -29, Up= 29, Right= 87
+	local col_position= {
+		Fret1= -72, Fret2= 0, Fret3= 72, Fret4= -72, 
+		Fret5= 0, Fret6= 72, StrumDown= 0
 	}
 	local parts_per_beat= 48
 	local tap_state_map= {
@@ -56,14 +53,15 @@ return function(button_list, stepstype)
 	}
 	local columns= {}
 	for i, button in ipairs(button_list) do
-		local hold_tex= tap_redir[button].." Hold 2x1.png"
-		local roll_tex= tap_redir[button].." Roll 2x1.png"
+		local hold_tex= hold_redir[button].." Hold 2x1.png"
+		local roll_tex= hold_redir[button].." Roll 2x1.png"
 		columns[i]= {
 			width= tap_width[button],
 			anim_time= 1,
 			anim_uses_beats= true,
 			padding= 0,
-			custom_x= x_reposition[button],
+			-- new thing to line up columns
+			custom_x= col_position[button],
 			taps= {
 				NewSkinTapPart_Tap= {
 					state_map= tap_state_map,
