@@ -235,7 +235,7 @@ void ReadBuf( const char *buf, int len, Song &outSong, Steps &outSteps, bool par
                resolution = atoi(vsWords[i+2].c_str());
                
                IniFile ini;
-               if( !ini.ReadFile( sFilePath + "/song.ini" ) )
+               if( !ini.ReadFile( sFilePath + "song.ini" ) )
                {
                   // could not find ini file, oh well
                   iHopoResolution = resolution / 4;
@@ -589,6 +589,9 @@ bool ReadFile( std::string sNewPath, Song &outSong, Steps &outSteps, bool parseS
    /* Open a file. */
    if( !f.Open( sNewPath ) )return false;
    
+   // path to the base dir
+   std::string sBasePath = sNewPath.substr(0, sNewPath.find_last_of("/")+1);
+   
    // allocate a string to hold the file
    std::string FileString;
    FileString.reserve( f.GetFileSize() );
@@ -604,7 +607,7 @@ bool ReadFile( std::string sNewPath, Song &outSong, Steps &outSteps, bool parseS
    std::string sscFile = sNewPath.substr(0,sNewPath.length()-5) + "ssc";
    std::string dir = sNewPath.substr(0,sNewPath.find_last_of("/\\")+1);
    
-   ReadBuf( FileString.c_str(), iBytesRead, tempSong, tempSteps, parseSongInfo, sNewPath );
+   ReadBuf( FileString.c_str(), iBytesRead, tempSong, tempSteps, parseSongInfo, sBasePath );
    
    /* This totally works, but it doesn't work if I just call ReadBuf with the output files */
    NotesWriterSSC::Write(sscFile, tempSong, tempSong.GetAllSteps(), false);
