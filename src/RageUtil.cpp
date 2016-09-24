@@ -13,6 +13,7 @@
 #include "LocalizedString.h"
 #include "LuaBinding.h"
 #include "LuaManager.h"
+#include "RageFmtWrap.h"
 
 #include <numeric>
 #include <ctime>
@@ -375,7 +376,7 @@ std::string Commify(const std::string& num, const std::string& sep, const std::s
 		num_start= dash_pos + 1;
 	}
 	size_t num_size= num_end - num_start;
-	size_t commies= (num_size / 3) - (!(num_size % 3));
+	size_t commies= (num_size - 1) / 3;
 	if(commies < 1)
 	{
 		return num;
@@ -428,16 +429,21 @@ std::string FormatNumberAndSuffix( int i )
 
 std::string unique_name(std::string const& type)
 {
-	static char const* name_chars= "abcdefghijklmnopqrstuvwxyz";
+	// The returned name is not universally unique, it's only unique to a run
+	// of the program.
+	// Use only letters that can be the first character of an identifier,
+	// for simplicity.  Exactly 32 letters so that each 5 bits of the counter
+	// encodes one letter.
+	static char const* name_chars= "abcdefghijklmnopqrstuvwxyzABCDEF";
 	static int name_count= 0;
 	int curr_name= name_count;
 	std::string ret= type + "_"; // Minimize the chance of a name collision.
-	ret= ret + name_chars[curr_name%26];
-	while(curr_name / 26 > 0)
+	do
 	{
-		curr_name= curr_name / 26;
-		ret= ret + name_chars[curr_name%26];
-	}
+		int letter= curr_name & 31;
+		ret= ret + name_chars[letter];
+		curr_name= curr_name >> 5;
+	} while(curr_name > 0);
 	++name_count;
 	return ret;
 }
@@ -1294,40 +1300,50 @@ static int UnicodeDoUpper( char *p, size_t iLen, const unsigned char pMapping[25
 	return iStart;
 }
 
-int StringToInt( const std::string &sString )
+int StringToInt(const std::string &str)
 {
-	int ret;
-	istringstream ( sString ) >> ret;
-	return ret;
-}
-
-std::string IntToString( const int &iNum )
-{
-	stringstream ss;
-	ss << iNum;
-	return ss.str();
-}
-
-float StringToFloat( const std::string &sString )
-{
-	float ret = strtof( sString.c_str(), nullptr );
-
-	if( !isfinite(ret) )
+	try
 	{
-		ret = 0.0f;
+		return std::stoi(str);
 	}
-	return ret;
+	catch(...)
+	{
+		return 0;
+	}
 }
 
-bool StringToFloat( const std::string &sString, float &fOut )
+float StringToFloat(const std::string &str)
 {
-	char *endPtr;
-
-	fOut = strtof( sString.c_str(), &endPtr );
-	return sString.size() && *endPtr == '\0' && isfinite( fOut );
+	try
+	{
+		float ret= std::stof(str);
+		if(!isfinite(ret))
+		{
+			ret = 0.0f;
+		}
+		return ret;
+	}
+	catch(...)
+	{
+		return 0.0f;
+	}
 }
 
-std::string FloatToString( const float &num )
+bool StringToFloat(const std::string &str, float &ret)
+{
+	try
+	{
+		ret= std::stof(str);
+		return isfinite(ret);
+	}
+	catch(...)
+	{
+		ret= 0.0f;
+		return false;
+	}
+}
+
+std::string FloatToString(const float &num)
 {
 	stringstream ss;
 	ss << num;

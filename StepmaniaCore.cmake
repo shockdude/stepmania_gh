@@ -128,7 +128,7 @@ if (MINGW)
   check_symbol_exists(PBM_SETMARQUEE commctrl.h HAVE_PBM_SETMARQUEE)
 endif()
 
-# Checks to make it easier to work with 32-bit/64-bit builds if required.
+# Checks to make it easier to work with fixed size types.
 include(CheckTypeSize)
 check_type_size(int16_t SIZEOF_INT16_T)
 check_type_size(uint16_t SIZEOF_UINT16_T)
@@ -234,6 +234,9 @@ find_package(Iconv)
 find_package(Threads)
 if (${Threads_FOUND})
   set(HAS_PTHREAD TRUE)
+  list(APPEND CMAKE_REQUIRED_LIBRARIES pthread)
+  check_symbol_exists(pthread_mutex_timedlock pthread.h HAVE_PTHREAD_MUTEX_TIMEDLOCK)
+  check_symbol_exists(pthread_cond_timedwait pthread.h HAVE_PTHREAD_COND_TIMEDWAIT)
 else()
   set(HAS_PTHREAD FALSE)
 endif()
@@ -268,6 +271,11 @@ if(WIN32)
     get_filename_component(LIB_AVUTIL ${LIB_AVUTIL} NAME)
   endif()
 elseif(MACOSX)
+  # TODO: Better way of determining if OGG is required.
+  # Also: Keep WITH_OGG checks together.
+  if (WITH_OGG)
+    include("${SM_CMAKE_DIR}/SetupOggVorbis.cmake")
+  endif()
 
   if (WITH_FFMPEG)
     include("${SM_CMAKE_DIR}/SetupFfmpeg.cmake")
@@ -278,7 +286,6 @@ elseif(MACOSX)
   set(WITH_CRASH_HANDLER TRUE)
   # Apple Archs needs to be 32-bit for now.
   # When SDL2 is introduced, this may change.
-  set(CMAKE_OSX_ARCHITECTURES "i386")
   set(CMAKE_OSX_DEPLOYMENT_TARGET "10.7")
   set(CMAKE_OSX_DEPLOYMENT_TARGET_FULL "10.7.0")
 
@@ -436,4 +443,3 @@ configure_file("${SM_SRC_DIR}/verstub.in.cpp" "${SM_SRC_DIR}/generated/verstub.c
 
 # Define installer based items for cpack.
 include("${CMAKE_CURRENT_LIST_DIR}/CMake/CPackSetup.cmake")
-

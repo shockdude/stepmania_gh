@@ -127,6 +127,8 @@ public:
 	std::string		m_sStageGUID;
 
 	void SetNewStageSeed();
+	uint32_t simple_stage_random(uint32_t seed_add);
+	float simple_stage_frandom(uint32_t seed_add);
 
 	/**
 	 * @brief Determine if a second player can join in at this time.
@@ -263,9 +265,6 @@ public:
 
 	BroadcastOnChange<bool> m_bGameplayLeadIn;
 
-	// if re-adding noteskin changes in courses, add functions and such here -aj
-	void GetAllUsedNoteSkins( std::vector<std::string> &out ) const;
-
 	static const float MUSIC_SECONDS_INVALID;
 
 	void ResetMusicStatistics();	// Call this when it's time to play a new song.  Clears the values above.
@@ -278,9 +277,11 @@ public:
 	bool OneIsHot() const;
 
 	// Haste
-	float	m_fHasteRate; // [-1,+1]; 0 = normal speed
-	float	m_fLastHasteUpdateMusicSeconds;
-	float	m_fAccumulatedHasteSeconds;
+	// The haste rate calculated by ScreenGameplay needs to be in GameState
+	// so that PlayerOptions can use it when scaling approach speeds by the
+	// current music rate. -Kyz
+	float m_haste_rate;
+	float get_hasted_music_rate();
 
 	// used by themes that support heart rate entry.
 	RageTimer m_DanceStartTime;

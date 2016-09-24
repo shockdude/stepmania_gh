@@ -208,7 +208,6 @@ elseif(APPLE)
     XCODE_ATTRIBUTE_INFOPLIST_PREPROCESSOR_DEFINITIONS[variant=RelWithDebInfo] "RELWITHDEBINFO"
     XCODE_ATTRIBUTE_INFOPLIST_PREFIX_HEADER "${SM_XCODE_DIR}/plistHelper.hpp"
     XCODE_ATTRIBUTE_GCC_PREFIX_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/archutils/Darwin/StepMania.pch"
-    XCODE_ATTRIBUTE_GCC_ENABLE_CPP_EXCEPTIONS "NO"
     XCODE_ATTRIBUTE_LIBRARY_SEARCH_PATHS "${SM_XCODE_DIR}/Libraries"
   )
 
@@ -254,7 +253,6 @@ elseif(APPLE)
       cp -r "${SM_ROOT_DIR}/Data" .\;
       cp -r "${SM_ROOT_DIR}/Docs" .\;
       cp -r "${SM_ROOT_DIR}/Manual" .\;
-      cp -r "${SM_ROOT_DIR}/NewSkins" .\;
       cp -r "${SM_ROOT_DIR}/NoteSkins" .\;
       cp -r "${SM_ROOT_DIR}/Scripts" .\;
       cp -r "${SM_ROOT_DIR}/Songs" .\;
@@ -424,22 +422,26 @@ elseif(APPLE)
     ${MAC_FRAME_CARBON}
     ${MAC_FRAME_COCOA}
     ${MAC_FRAME_IOKIT}
-    ${MAC_FRAME_QUICKTIME}
     ${MAC_FRAME_OPENGL}
     ${MAC_FRAME_COREFOUNDATION}
     ${MAC_FRAME_AUDIOTOOLBOX}
     ${MAC_FRAME_AUDIOUNIT}
     ${MAC_FRAME_COREAUDIO}
     ${MAC_FRAME_CORESERVICES}
-    "ogg"
-    "theora"
-    "vorbis"
   )
   list(APPEND SMDATA_LINK_LIB
     "${BZIP2_LIBRARY_RELEASE}"
     "${ICONV_LIBRARIES}"
     "pcre"
   )
+
+  if (HAS_OGG)
+    list(APPEND SMDATA_LINK_LIB
+      "${SM_OGG_ROOT}/$<$<CONFIG:Release>:Release>$<$<CONFIG:Debug>:Debug>$<$<CONFIG:MinSizeRel>:MinSizeRel>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>/libogg.a"
+      "${SM_VORBIS_ROOT}/lib/$<$<CONFIG:Release>:Release>$<$<CONFIG:Debug>:Debug>$<$<CONFIG:MinSizeRel>:MinSizeRel>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>/libvorbis.a"
+      "${SM_VORBIS_ROOT}/lib/$<$<CONFIG:Release>:Release>$<$<CONFIG:Debug>:Debug>$<$<CONFIG:MinSizeRel>:MinSizeRel>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>/libvorbisfile.a"
+    )
+  endif()
 
   if(HAS_FFMPEG)
     list(APPEND SMDATA_LINK_LIB
@@ -605,9 +607,10 @@ if(NOT APPLE)
   endif()
 else()
   if(WITH_OGG)
+    add_dependencies("${SM_EXE_NAME}" "vorbis")
     list(APPEND SM_INCLUDE_DIRS
-      "${SM_EXTERN_DIR}/newogg/include"
-      "${SM_EXTERN_DIR}/newvorbis/include"
+      "${SM_OGG_INCLUDE_DIR}"
+      "${SM_VORBIS_INCLUDE_DIR}"
     )
   endif()
   list(APPEND SM_INCLUDE_DIRS
@@ -675,7 +678,6 @@ if(NOT APPLE)
   install(DIRECTORY "${SM_ROOT_DIR}/Data" DESTINATION "${SM_INSTALL_DESTINATION}")
   install(DIRECTORY "${SM_ROOT_DIR}/BackgroundTransitions" DESTINATION "${SM_INSTALL_DESTINATION}")
   install(DIRECTORY "${SM_ROOT_DIR}/Docs" DESTINATION "${SM_INSTALL_DESTINATION}")
-  install(DIRECTORY "${SM_ROOT_DIR}/NewSkins" DESTINATION "${SM_INSTALL_DESTINATION}")
   install(DIRECTORY "${SM_ROOT_DIR}/NoteSkins" DESTINATION "${SM_INSTALL_DESTINATION}")
   if (NOT SM_INSTALL_DESTINATION)
     install(DIRECTORY "${SM_ROOT_DIR}/Songs/StepMania 5" DESTINATION "Songs")

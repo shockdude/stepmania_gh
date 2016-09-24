@@ -18,9 +18,9 @@ local ShowFlashyCombo = player_config:get_data(player).FlashyCombo
 local t = Def.ActorFrame {
 	InitCommand= function(self)
 		if player_config:get_data(player).ComboUnderField then
-			self:draworder(newfield_draw_order.under_field)
+			self:draworder(notefield_draw_order.under_field)
 		else
-			self:draworder(newfield_draw_order.over_field)
+			self:draworder(notefield_draw_order.over_field)
 		end
 		c = self:GetChildren();
 		cf = c.ComboFrame:GetChildren();
@@ -29,7 +29,7 @@ local t = Def.ActorFrame {
 		cf.MissLabel:visible(false)
 	end,
 	-- flashy combo elements:
- 	LoadActor(THEME:GetPathG("Combo","100Milestone")) .. {
+	LoadActor(THEME:GetPathG("Combo","100Milestone"), player) .. {
 		Name="OneHundredMilestone";
 		InitCommand=cmd(visible,ShowFlashyCombo);
 		FiftyMilestoneCommand=cmd(playcommand,"Milestone");

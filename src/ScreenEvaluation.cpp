@@ -68,10 +68,11 @@ XToString( DetailLine );
 #define SHOW_SCORE_AREA				THEME->GetMetricB(m_sName,"ShowScoreArea")
 #define SHOW_TIME_AREA				THEME->GetMetricB(m_sName,"ShowTimeArea")
 #define SHOW_RECORDS_AREA			THEME->GetMetricB(m_sName,"ShowRecordsArea")
-#define PLAYER_OPTIONS_HIDE_FAIL_TYPE	THEME->GetMetricB(m_sName,"PlayerOptionsHideFailType")
-#define PLAYER_OPTIONS_SEPARATOR	THEME->GetMetric (m_sName,"PlayerOptionsSeparator")
-#define CHECKPOINTS_WITH_JUDGMENTS	THEME->GetMetricB(m_sName,"CheckpointsWithJudgments")
+#define PLAYER_OPTIONS_HIDE_FAIL_TYPE		THEME->GetMetricB(m_sName,"PlayerOptionsHideFailType")
+#define PLAYER_OPTIONS_SEPARATOR		THEME->GetMetric (m_sName,"PlayerOptionsSeparator")
+#define CHECKPOINTS_WITH_JUDGMENTS		THEME->GetMetricB(m_sName,"CheckpointsWithJudgments")
 
+static ThemeMetric<TapNoteScore>		g_MinScoreToMaintainCombo("Gameplay", "MinScoreToMaintainCombo");
 static const int NUM_SHOWN_RADAR_CATEGORIES = 5;
 
 AutoScreenMessage( SM_PlayCheer );
@@ -312,6 +313,7 @@ void ScreenEvaluation::Init()
 				m_textPlayerOptions[p].SetName( fmt::sprintf("PlayerOptionsP%d",p+1) );
 				ActorUtil::LoadAllCommands( m_textPlayerOptions[p], m_sName );
 				SET_XY( m_textPlayerOptions[p] );
+				/*
 				PlayerOptions po = GAMESTATE->m_pPlayerState[p]->m_PlayerOptions.GetPreferred();
 				if( PLAYER_OPTIONS_HIDE_FAIL_TYPE )
 				{
@@ -320,7 +322,8 @@ void ScreenEvaluation::Init()
 				vector<std::string> v;
 				po.GetLocalizedMods( v );
 				auto sPO = Rage::join( PLAYER_OPTIONS_SEPARATOR, v );
-				m_textPlayerOptions[p].SetText( sPO );
+				*/
+				m_textPlayerOptions[p].SetText(get_player_mod_string(p, PLAYER_OPTIONS_HIDE_FAIL_TYPE));
 				this->AddChild( &m_textPlayerOptions[p] );
 			}
 
@@ -680,9 +683,9 @@ void ScreenEvaluation::Init()
 	{
 		SOUND->PlayOnceFromDir( ANNOUNCER->GetPathTo("evaluation new record") );
 	}
-	else if( bOneHasFullW4Combo && ANNOUNCER->HasSoundsFor("evaluation full combo W4") )
+	else if( bOneHasFullW4Combo && g_MinScoreToMaintainCombo == TNS_W4 )
 	{
-		SOUND->PlayOnceFromDir(ANNOUNCER->GetPathTo("evaluation full combo W4"));
+		SOUND->PlayOnceFromDir( ANNOUNCER->GetPathTo("evaluation full combo W4") );
 	}
 	else if( (bOneHasFullW1Combo || bOneHasFullW2Combo || bOneHasFullW3Combo) )
 	{

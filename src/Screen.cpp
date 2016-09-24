@@ -1,6 +1,7 @@
 #include "global.h"
 #include "Screen.h"
 #include "PrefsManager.h"
+#include "RageInput.h"
 #include "RageSound.h"
 #include "RageLog.h"
 #include "ThemeManager.h"
@@ -216,8 +217,10 @@ bool Screen::Input( const InputEventPlus &input )
 		case GAME_BUTTON_MENULEFT:  return this->MenuLeft ( input );
 		case GAME_BUTTON_MENURIGHT: return this->MenuRight( input );
 		case GAME_BUTTON_BACK:
-			// Don't make the user hold the back button if they're pressing escape and escape is the back button.
-			if( !PREFSMAN->m_bDelayedBack || input.type==IET_REPEAT || (input.DeviceI.device == DEVICE_KEYBOARD && input.DeviceI.button == KEY_ESC) )
+			// Only go back on first press.  If somebody is backing out of the
+			// options screen, they might still be holding it when select music
+			// appears, and accidentally back out of that too. -Kyz
+			if(input.type == IET_FIRST_PRESS)
 			{
 				if( HANDLE_BACK_BUTTON )
 					return this->MenuBack( input );
@@ -346,6 +349,9 @@ bool Screen::PassInputToLua(const InputEventPlus& input)
 		lua_setfield(L, -2, "is_joystick");
 		lua_pushboolean(L, input.DeviceI.IsMouse());
 		lua_setfield(L, -2, "is_mouse");
+		wchar_t c= INPUTMAN->DeviceInputToChar(input.DeviceI,true);
+		lua_pushstring(L, WStringToString(std::wstring()+c).c_str());
+		lua_setfield(L, -2, "character");
 	}
 	lua_setfield(L, -2, "DeviceInput");
 	Enum::Push(L, input.GameI.controller);

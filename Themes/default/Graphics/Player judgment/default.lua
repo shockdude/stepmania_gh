@@ -4,7 +4,7 @@ local function ShowProtiming()
   if GAMESTATE:IsDemonstration() then
     return false
   else
-    return GetUserPrefB("UserPrefProtiming" .. ToEnumShortString(player));
+    return player_config:get_data(player).Protiming
   end
 end;
 local bShowProtiming = ShowProtiming();
@@ -55,9 +55,9 @@ local TNSFrames = {
 local frame = Def.ActorFrame {
 	InitCommand = function(self)
 		if player_config:get_data(player).JudgmentUnderField then
-			self:draworder(newfield_draw_order.under_field)
+			self:draworder(notefield_draw_order.under_field)
 		else
-			self:draworder(newfield_draw_order.over_field)
+			self:draworder(notefield_draw_order.over_field)
 		end
 		c = self:GetChildren();
 	end,

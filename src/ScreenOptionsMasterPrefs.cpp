@@ -4,7 +4,6 @@
 #include "PrefsManager.h"
 #include "ThemeManager.h"
 #include "AnnouncerManager.h"
-#include "NoteSkinManager.h"
 #include "PlayerOptions.h"
 #include "SongOptions.h"
 #include "RageDisplay.h"
@@ -349,40 +348,6 @@ static void Announcer( int &sel, bool ToSel, const ConfOption *pConfOption )
 	}
 }
 
-static void DefaultNoteSkinChoices( vector<std::string> &out )
-{
-	NOTESKIN->GetNoteSkinNames( out );
-}
-
-static void DefaultNoteSkin( int &sel, bool ToSel, const ConfOption *pConfOption )
-{
-	vector<std::string> choices;
-	pConfOption->MakeOptionsList( choices );
-
-	if( ToSel )
-	{
-		PlayerOptions po;
-		po.FromString( PREFSMAN->m_sDefaultModifiers.Get() );
-		sel = 0;
-		Rage::ci_ascii_string playerNoteSkin{ po.m_sNoteSkin.c_str()};
-		for( unsigned i=0; i < choices.size(); i++ )
-		{
-			if (playerNoteSkin == choices[i])
-			{
-				sel = i;
-			}
-		}
-	}
-	else
-	{
-		PlayerOptions po;
-		SongOptions so;
-		GetPrefsDefaultModifiers( po, so );
-		po.m_sNoteSkin = choices[sel];
-		SetPrefsDefaultModifiers( po, so );
-	}
-}
-
 static void DefaultFailChoices(vector<std::string>& out)
 {
 	out.push_back("Immediate");
@@ -439,7 +404,7 @@ static void BGBrightnessOrStatic( int &sel, bool ToSel, const ConfOption *pConfO
 
 static void NumBackgrounds( int &sel, bool ToSel, const ConfOption *pConfOption )
 {
-	const int mapping[] = { 5,10,15,20 };
+	const int mapping[] = { 1,5,10,15,20 };
 	MoveMap( sel, pConfOption, ToSel, mapping, ARRAYLEN(mapping) );
 }
 
@@ -778,7 +743,6 @@ static void InitializeConfOptions()
 	g_ConfOptions.back().m_iEffects = OPT_APPLY_THEME;
 
 	ADD( ConfOption( "Announcer",			Announcer,		AnnouncerChoices ) );
-	ADD( ConfOption( "DefaultNoteSkin",		DefaultNoteSkin,	DefaultNoteSkinChoices ) );
 	ADD( ConfOption( "ShowInstructions",		MovePref<bool>,		"Skip","Show") );
 	ADD( ConfOption( "ShowCaution",			MovePref<bool>,		"Skip","Show") );
 	ADD( ConfOption( "DancePointsForOni",		MovePref<bool>,		"Percent","Dance Points") );
@@ -819,13 +783,14 @@ static void InitializeConfOptions()
 	ADD( ConfOption( "ShowDanger",			MovePref<bool>,		"Hide","Show" ) );
 	ADD( ConfOption( "ShowDancingCharacters",	MovePref<ShowDancingCharacters>, "Default to Off","Default to Random","Select" ) );
 	ADD( ConfOption( "ShowBeginnerHelper",		MovePref<bool>,		"Off","On" ) );
-	ADD( ConfOption( "NumBackgrounds",		NumBackgrounds,		"|5","|10","|15","|20" ) );
+	ADD( ConfOption( "NumBackgrounds",		NumBackgrounds,		"|1","|5","|10","|15","|20" ) );
 
 	// Input options
 	ADD( ConfOption( "AutoMapOnJoyChange",		MovePref<bool>,		"Off","On (recommended)" ) );
 	ADD( ConfOption( "OnlyDedicatedMenuButtons",	MovePref<bool>,		"Use Gameplay Buttons","Only Dedicated Buttons" ) );
 	ADD( ConfOption( "AutoPlay",			MovePref<PlayerController>, "Off","On","CPU-Controlled" ) );
 	ADD( ConfOption( "DelayedBack",			MovePref<bool>,		"Instant","Hold" ) );
+	ADD( ConfOption( "AllowHoldForOptions", MovePref<bool>, "Double Tap", "Hold"));
 	ADD( ConfOption( "ArcadeOptionsNavigation",	MovePref<bool>,		"StepMania Style","Arcade Style" ) );
 	ADD( ConfOption( "ThreeKeyNavigation", MovePref<bool>, "Five Key Menu", "Three Key Menu" ) );
 	ADD( ConfOption( "MusicWheelSwitchSpeed",	MusicWheelSwitchSpeed,	"Slow","Normal","Fast","Really Fast" ) );

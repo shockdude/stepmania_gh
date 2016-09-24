@@ -33,6 +33,7 @@
 #include "OptionsList.h"
 #include "RageFileManager.h"
 #include "RageUnicode.hpp"
+#include "RageFmtWrap.h"
 
 using std::vector;
 
@@ -72,6 +73,7 @@ static LocalizedString PERMANENTLY_DELETE("ScreenSelectMusic", "PermanentlyDelet
 REGISTER_SCREEN_CLASS( ScreenSelectMusic );
 void ScreenSelectMusic::Init()
 {
+	m_prev_sample_music_path= "";
 	g_ScreenStartedLoadingAt.Touch();
 	if( PREFSMAN->m_sTestInitialScreen.Get() == m_sName )
 	{
@@ -385,9 +387,9 @@ void ScreenSelectMusic::CheckBackgroundRequests( bool bForce )
 
 		GameSoundManager::PlayMusicParams PlayParams;
 		PlayParams.sFile = HandleLuaMusicFile(m_sSampleMusicToPlay);
-		if(PlayParams.sFile != m_prev_music_played)
+		if(PlayParams.sFile != SOUND->GetMusicPath())
 		{
-			m_prev_music_played= PlayParams.sFile;
+			m_prev_sample_music_path= m_sSampleMusicToPlay;
 			PlayParams.pTiming = m_pSampleMusicTimingData;
 			PlayParams.bForceLoop = SAMPLE_MUSIC_LOOPS;
 			PlayParams.fStartSecond = m_fSampleStartSeconds;
@@ -511,7 +513,7 @@ bool ScreenSelectMusic::Input( const InputEventPlus &input )
 			if ( songToDelete && PREFSMAN->m_bAllowSongDeletion.Get() )
 			{
 				m_pSongAwaitingDeletionConfirmation = songToDelete;
-				ScreenPrompt::Prompt(SM_ConfirmDeleteSong, fmt::sprintf(PERMANENTLY_DELETE.GetValue(), songToDelete->m_sMainTitle.c_str(), songToDelete->GetSongDir().c_str()), PROMPT_YES_NO);
+				ScreenPrompt::Prompt(SM_ConfirmDeleteSong, rage_fmt_wrapper(PERMANENTLY_DELETE, songToDelete->m_sMainTitle.c_str(), songToDelete->GetSongDir().c_str()), PROMPT_YES_NO);
 				return true;
 			}
 		}
@@ -1534,7 +1536,10 @@ bool ScreenSelectMusic::MenuStart( const InputEventPlus &input )
 			 * hit accidentally.  Accept an initial START right away, though,
 			 * so we don't ignore deliberate fast presses (which would be
 			 * annoying). */
-			this->PostScreenMessage( SM_AllowOptionsMenuRepeat, 0.5f );
+			if(PREFSMAN->m_AllowHoldForOptions.Get())
+			{
+				this->PostScreenMessage( SM_AllowOptionsMenuRepeat, 0.5f );
+			}
 
 			StartTransitioningScreen( SM_None );
 			float fTime = std::max( SHOW_OPTIONS_MESSAGE_SECONDS, this->GetTweenTimeLeft() );
@@ -1911,15 +1916,23 @@ void ScreenSelectMusic::AfterMusicChange()
 	{
 		const Course *lCourse = m_MusicWheel.GetSelectedCourse();
 		const Style *pStyle = nullptr;
-		if( CommonMetrics::AUTO_SET_STYLE )
+		if(CommonMetrics::AUTO_SET_STYLE)
 		{
-			pStyle = pCourse->GetCourseStyle( GAMESTATE->m_pCurGame, GAMESTATE->GetNumSidesJoined() );
+			pStyle = pCourse->GetCourseStyle(GAMESTATE->m_pCurGame, GAMESTATE->GetNumPlayersEnabled());
+			if(pStyle == NULL)
+			{
+				lCourse->GetAllTrails(m_vpTrails);
+			}
+			else
+			{
+				lCourse->GetTrails(m_vpTrails, pStyle->m_StepsType);
+			}
 		}
-		if( pStyle == nullptr )
+		else
 		{
 			pStyle = GAMESTATE->GetCurrentStyle(PLAYER_INVALID);
+			lCourse->GetTrails(m_vpTrails, pStyle->m_StepsType);
 		}
-		lCourse->GetTrails( m_vpTrails, pStyle->m_StepsType );
 
 		m_sSampleMusicToPlay = m_sCourseMusicPath;
 		m_fSampleStartSeconds = 0;
@@ -1968,7 +1981,7 @@ void ScreenSelectMusic::AfterMusicChange()
 
 	// Don't stop music if it's already playing the right file.
 	g_bSampleMusicWaiting = false;
-	if( !m_MusicWheel.IsRouletting() && SOUND->GetMusicPath() != m_sSampleMusicToPlay )
+	if(!m_MusicWheel.IsRouletting() && m_sSampleMusicToPlay != m_prev_sample_music_path)
 	{
 		SOUND->StopMusic();
 		// some SampleMusicPreviewModes don't want the sample music immediately.
@@ -2047,7 +2060,7 @@ bool ScreenSelectMusic::can_open_options_list(PlayerNumber pn)
 #include "LuaBinding.h"
 
 /** @brief Allow Lua to have access to the ScreenSelectMusic. */
-class LunaScreenSelectMusic: public Luna<ScreenSelectMusic>
+class LunaScreenSelectMusic: public Luna<ScreenSelectMusic>
 {
 public:
 	static int GetGoToOptions( T* p, lua_State *L ) { lua_pushboolean( L, p->GetGoToOptions() ); return 1; }

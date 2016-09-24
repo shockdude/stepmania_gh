@@ -31,6 +31,7 @@
 #include "ScreenSyncOverlay.h"
 #include "ThemeMetric.h"
 #include "XmlToLua.h"
+#include "RageFmtWrap.h"
 
 using std::vector;
 
@@ -156,7 +157,7 @@ static std::string GetDebugButtonName( const IDebugLine *pLine )
 	case IDebugLine::all_screens:
 		return s;
 	case IDebugLine::gameplay_only:
-		return fmt::sprintf( IN_GAMEPLAY.GetValue(), s.c_str() );
+		return rage_fmt_wrapper(IN_GAMEPLAY, s.c_str());
 	default:
 		FAIL_M(fmt::sprintf("Invalid debug line type: %i", type));
 	}
@@ -1074,7 +1075,7 @@ class DebugLineReloadTheme : public IDebugLine
 	{
 		THEME->ReloadMetrics();
 		TEXTUREMAN->ReloadAll();
-		NOTESKIN->RefreshNoteSkinData( GAMESTATE->m_pCurGame );
+		NOTESKIN->load_skins();
 		CodeDetector::RefreshCacheItems();
 		// HACK: Don't update text below. Return immediately because this screen
 		// was just destroyed as part of the theme reload.
@@ -1321,6 +1322,7 @@ DECLARE_ONE( DebugLineCoinMode );
 DECLARE_ONE( DebugLineSlow );
 DECLARE_ONE( DebugLineHalt );
 DECLARE_ONE( DebugLineLightsDebug );
+DECLARE_ONE( DebugLineMuteActions );
 DECLARE_ONE( DebugLineStats );
 DECLARE_ONE( DebugLineVsync );
 DECLARE_ONE( DebugLineAllowMultitexture );
@@ -1351,7 +1353,6 @@ DECLARE_ONE( DebugLineVisualDelayUp );
 DECLARE_ONE( DebugLineForceCrash );
 DECLARE_ONE( DebugLineUptime );
 DECLARE_ONE( DebugLineResetKeyMapping );
-DECLARE_ONE( DebugLineMuteActions );
 
 
 /*

@@ -50,14 +50,12 @@ local t = Def.ActorFrame {
 		InitCommand= function(self)
 			self:x(68):maxwidth(88/bpm_text_zoom):shadowlength(1):zoom(bpm_text_zoom)
 			self:playcommand("ConfigValueChanged", {pn= PlayerNumber, field_name= "speed_mod"})
-			--local speed, mode= GetSpeedModeAndValueFromPoptions(PlayerNumber)
-			--self:playcommand("SpeedChoiceChanged", {pn= PlayerNumber, mode= mode, speed= speed})
 		end,
 		BPMWillNotChangeCommand=cmd(stopeffect),
 		BPMWillChangeCommand=cmd(diffuseshift;effectcolor1,Color.White;effectcolor2,Color.Orange),
 		ConfigValueChangedMessageCommand= function(self, param)
 			if param.field_name == "speed_mod" or param.field_name == "speed_type" then
-				local prefs= newfield_prefs_config:get_data(param.pn)
+				local prefs= notefield_prefs_config:get_data(param.pn)
 				local mode_conversion= {maximum= "m", multiple= "x", constant= "C"}
 				local speed= prefs.speed_mod
 				local mode= mode_conversion[prefs.speed_type]

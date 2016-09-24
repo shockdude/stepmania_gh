@@ -24,7 +24,7 @@ public:
 		ClearCacheNegative();
 	}
 
-	CachedObject( const CachedObject &cpy ): m_pObject(nullptr)
+	CachedObject( const CachedObject & ): m_pObject(nullptr)
 	{
 		ClearCacheNegative();
 	}
@@ -35,7 +35,7 @@ public:
 			ClearCacheSpecific( m_pObject );
 	}
 
-	CachedObject &operator=( const CachedObject &rhs ) { return *this; }
+	CachedObject &operator=( const CachedObject & ) { return *this; }
 
 	/* Clear all cached entries for this type. */
 	static void ClearCacheAll()

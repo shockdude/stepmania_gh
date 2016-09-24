@@ -12,6 +12,7 @@
 #include "Profile.h"
 #include "OptionRowHandler.h"
 #include "LocalizedString.h"
+#include "RageFmtWrap.h"
 
 using std::vector;
 
@@ -70,8 +71,8 @@ static MenuDef g_TempMenu(
 	"ScreenMiniMenuContext"
 );
 
-static LocalizedString PROFILE_NAME_BLANK	( "ScreenEditMenu", "Profile name cannot be blank." );
-static LocalizedString PROFILE_NAME_CONFLICTS	( "ScreenEditMenu", "The name you chose conflicts with another profile. Please use a different name." );
+static LocalizedString PROFILE_NAME_BLANK	( "ScreenOptionsManageProfiles", "profile_name_blank" );
+static LocalizedString PROFILE_NAME_CONFLICTS	( "ScreenOptionsManageProfiles", "profile_name_conflicts" );
 static bool ValidateLocalProfileName( const std::string &sAnswer, std::string &sErrorOut )
 {
 	if( sAnswer == "" )
@@ -322,14 +323,14 @@ void ScreenOptionsManageProfiles::HandleScreenMessage( const ScreenMessage SM )
 			case ProfileAction_Delete:
 				{
 					std::string sTitle = pProfile->m_sDisplayName;
-					std::string sMessage = fmt::sprintf( CONFIRM_DELETE_PROFILE.GetValue(), sTitle.c_str() );
+					std::string sMessage = rage_fmt_wrapper(CONFIRM_DELETE_PROFILE, sTitle.c_str() );
 					ScreenPrompt::Prompt( SM_BackFromDeleteConfirm, sMessage, PROMPT_YES_NO );
 				}
 				break;
 			case ProfileAction_Clear:
 				{
 					std::string sTitle = pProfile->m_sDisplayName;
-					std::string sMessage = fmt::sprintf( CONFIRM_CLEAR_PROFILE.GetValue(), sTitle.c_str() );
+					std::string sMessage = rage_fmt_wrapper(CONFIRM_CLEAR_PROFILE, sTitle.c_str() );
 					ScreenPrompt::Prompt( SM_BackFromClearConfirm, sMessage, PROMPT_YES_NO );
 				}
 				break;

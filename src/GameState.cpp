@@ -28,6 +28,7 @@
 #include "RageFile.h"
 #include "RageLog.h"
 #include "RageUtil.h"
+#include "RageFmtWrap.h"
 #include "Song.h"
 #include "SongManager.h"
 #include "SongUtil.h"
@@ -111,6 +112,16 @@ static ThemeMetric<bool> ARE_STAGE_SONG_MODS_FORCED	("GameState","AreStageSongMo
 static Preference<Premium> g_Premium( "Premium", Premium_DoubleFor1Credit );
 Preference<bool> GameState::m_bAutoJoin( "AutoJoin", false );
 
+static LocalizedString no_profile_warning("Common", "NoProfileWarning");
+static void show_no_profile_warning(PlayerNumber pn)
+{
+	if(PREFSMAN->m_WarnOnNoProfile)
+	{
+		std::string warning= rage_fmt_wrapper(no_profile_warning, PlayerNumberToLocalizedString(pn).c_str());
+		SCREENMAN->SystemMessage(warning);
+	}
+}
+
 GameState::GameState() :
 	processedTiming( nullptr ),
 	m_pCurGame(				Message_CurrentGameChanged ),
@@ -173,6 +184,8 @@ GameState::GameState() :
 	m_Environment = new LuaTable;
 
 	m_bDopefish = false;
+
+	m_haste_rate= 1.f;
 
 	sExpandedSectionName = "";
 
@@ -281,6 +294,20 @@ void GameState::ResetPlayerOptions( PlayerNumber pn )
 	PlayerOptions po;
 	GetDefaultPlayerOptions( po );
 	m_pPlayerState[pn]->m_PlayerOptions.Assign( ModsLevel_Preferred, po );
+	LuaReference clear_notefield_mods;
+	THEME->GetMetric("Common", "ClearNoteFieldModsFunction", clear_notefield_mods);
+	if(clear_notefield_mods.GetLuaType() != LUA_TFUNCTION)
+	{
+		LuaHelpers::ReportScriptError("Common::ClearNoteFieldModsFunction metric must be a function.");
+		return;
+	}
+	Lua* L= LUA->Get();
+	clear_notefield_mods.PushSelf(L);
+	Enum::Push(L, pn);
+	std::string err= "Error running ClearNoteFieldModsFunction:  ";
+	LuaHelpers::RunScriptOnStack(L, err, 1, 0, true);
+	lua_settop(L, 0);
+	LUA->Release(L);
 }
 
 void GameState::Reset()
@@ -326,7 +353,7 @@ void GameState::Reset()
 	m_iNumStagesOfThisSong = 0;
 	m_bLoadingNextSong = false;
 
-	NOTESKIN->RefreshNoteSkinData( m_pCurGame );
+	NOTESKIN->load_skins();
 
 	m_iGameSeed = rand();
 	m_iStageSeed = rand();
@@ -617,7 +644,10 @@ void GameState::LoadProfiles( bool bLoadEdits )
 		MEMCARDMAN->UnmountCard( pn );
 
 		if( !bSuccess )
+		{
+			show_no_profile_warning(pn);
 			continue;
+		}
 
 		// Lock the card on successful load, so we won't allow it to be changed.
 		MEMCARDMAN->LockCard( pn );
@@ -668,6 +698,7 @@ bool GameState::HaveProfileToLoad()
 			return true;
 		if( !PROFILEMAN->m_sDefaultLocalProfileID[pn].Get().empty() )
 			return true;
+		show_no_profile_warning(pn);
 	}
 
 	return false;
@@ -1231,9 +1262,6 @@ void GameState::ResetStageStatistics()
 	FOREACH_PlayerNumber( p )
 		m_pPlayerState[p]->RemoveAllInventory();
 	m_fOpponentHealthPercent = 1;
-	m_fHasteRate = 0;
-	m_fLastHasteUpdateMusicSeconds = 0;
-	m_fAccumulatedHasteSeconds = 0;
 	m_fTugLifePercentP1 = 0.5f;
 	FOREACH_PlayerNumber( p )
 	{
@@ -1257,6 +1285,16 @@ void GameState::ResetStageStatistics()
 	// Reset the round seed. Do this here and not in FinishStage so that players
 	// get new shuffle patterns if they Back out of gameplay and play again.
 	m_iStageSeed = rand();
+}
+
+float GameState::get_hasted_music_rate()
+{
+	auto& ops= m_SongOptions.GetCurrent();
+	if(ops.m_fHaste != 0.0f)
+	{
+		return m_haste_rate * ops.m_fMusicRate;
+	}
+	return ops.m_fMusicRate;
 }
 
 void GameState::UpdateSongPosition( float fPositionSeconds, const TimingData &timing, const RageTimer &timestamp )
@@ -1832,8 +1870,6 @@ void GameState::GetDefaultPlayerOptions( PlayerOptions &po )
 	po.Init();
 	po.FromString( PREFSMAN->m_sDefaultModifiers.Get() );
 	po.FromString( CommonMetrics::DEFAULT_MODIFIERS.GetValue() );
-	if( po.m_sNoteSkin.empty() )
-		po.m_sNoteSkin = CommonMetrics::DEFAULT_NOTESKIN_NAME;
 }
 
 void GameState::GetDefaultSongOptions( SongOptions &so )
@@ -1888,41 +1924,6 @@ bool GameState::CurrentOptionsDisqualifyPlayer( PlayerNumber pn )
 		return po.IsEasierForCourseAndTrail(  m_pCurCourse, m_pCurTrail[pn] );
 	else
 		return po.IsEasierForSongAndSteps(  m_pCurSong, m_pCurSteps[pn], pn);
-}
-
-/* reset noteskins (?)
- * GameState::ResetNoteSkins()
- * GameState::ResetNoteSkinsForPlayer( PlayerNumber pn )
- *
- */
-
-void GameState::GetAllUsedNoteSkins( vector<std::string> &out ) const
-{
-	FOREACH_EnabledPlayer( pn )
-	{
-		out.push_back( m_pPlayerState[pn]->m_PlayerOptions.GetCurrent().m_sNoteSkin );
-
-		// Add noteskins that are used in courses.
-		if( IsCourseMode() )
-		{
-			const Trail *pTrail = m_pCurTrail[pn];
-			ASSERT( pTrail != nullptr );
-
-			for (auto const &e: pTrail->m_vEntries)
-			{
-				PlayerOptions po;
-				po.FromString( e.Modifiers );
-				if( !po.m_sNoteSkin.empty() )
-				{
-					out.push_back( po.m_sNoteSkin );
-				}
-			}
-		}
-	}
-
-	// Remove duplicates.
-	sort( out.begin(), out.end() );
-	out.erase( unique( out.begin(), out.end() ), out.end() );
 }
 
 void GameState::RemoveAllActiveAttacks()	// called on end of song
@@ -2531,6 +2532,18 @@ void GameState::SetNewStageSeed()
 	m_iStageSeed= rand();
 }
 
+uint32_t GameState::simple_stage_random(uint32_t seed_add)
+{
+	uint64_t random = 0xE4AA2261 * (m_iStageSeed + seed_add * 0x17427C37);
+	return ((random & 65535) ^ (random >> 16));
+}
+
+float GameState::simple_stage_frandom(uint32_t seed_add)
+{
+	return simple_stage_random(seed_add) / 65536.f;
+}
+
+
 bool GameState::IsEventMode() const
 {
 	return m_bTemporaryEventMode || PREFSMAN->m_bEventMode;
@@ -2859,7 +2872,7 @@ public:
 		lua_pushstring(L, so.GetString().c_str());
 		return 1;
 	}
-	static int ApplyPreferredSongOptionsToOtherLevels(T* p, lua_State* L)
+	static int ApplyPreferredSongOptionsToOtherLevels(T* p, lua_State*)
 	{
 		p->m_SongOptions.Assign(ModsLevel_Preferred,
 			p->m_SongOptions.Get(ModsLevel_Preferred));
@@ -2949,7 +2962,7 @@ public:
 
 	static int SetPreferredSongGroup( T* p, lua_State *L ) { p->m_sPreferredSongGroup.Set( SArg(1) ); COMMON_RETURN_SELF; }
 	DEFINE_METHOD( GetPreferredSongGroup, m_sPreferredSongGroup.Get() );
-	static int GetHumanPlayers( T* p, lua_State *L )
+	static int GetHumanPlayers( T*, lua_State *L )
 	{
 		vector<PlayerNumber> vHP;
 		FOREACH_HumanPlayer( pn )
@@ -3056,12 +3069,6 @@ public:
 		COMMON_RETURN_SELF;
 	}
 
-	static int RefreshNoteSkinData( T* p, lua_State *L )
-	{
-		NOTESKIN->RefreshNoteSkinData(p->m_pCurGame);
-		COMMON_RETURN_SELF;
-	}
-
 	static int Dopefish( T* p, lua_State *L )
 	{
 		lua_pushboolean(L, p->m_bDopefish);
@@ -3127,7 +3134,7 @@ public:
 		return false;
 	}
 
-	static void ClearIncompatibleStepsAndTrails( T *p, lua_State* L )
+	static void ClearIncompatibleStepsAndTrails(T* p, lua_State*)
 	{
 		FOREACH_HumanPlayer( pn )
 		{
@@ -3200,9 +3207,10 @@ public:
 		// 1.  Edit existing steps:
 		//    song, steps
 		// 2.  Create new steps to edit:
-		//    song, nil, stepstype, difficulty
+		//    song, nil, stepstype, difficulty, description
 		// 3.  Copy steps to new difficulty to edit:
-		//    song, steps, stepstype, difficulty
+		//    song, steps, stepstype, difficulty, description
+		// Description field is optional.
 		Song* song= Luna<Song>::check(L, 1);
 		Steps* steps= nullptr;
 		if(!lua_isnil(L, 2))
@@ -3217,10 +3225,11 @@ public:
 			p->SetCurrentStyle(GAMEMAN->GetEditorStyleForStepsType(
 					steps->m_StepsType), PLAYER_INVALID);
 			p->m_pCurCourse.Set(nullptr);
-			return 0;
+			steps->PushSelf(L);
+			return 1;
 		}
 		StepsType stype= Enum::Check<StepsType>(L, 3);
-		Enum::Check<Difficulty>(L, 4);
+		Difficulty diff= Enum::Check<Difficulty>(L, 4);
 		Steps* new_steps= song->CreateSteps();
 		std::string edit_name;
 		// Form 2.
@@ -3236,15 +3245,21 @@ public:
 			new_steps->CopyFrom(steps, stype, song->m_fMusicLengthSeconds);
 			edit_name= steps->GetDescription();
 		}
-		SongUtil::MakeUniqueEditDescription(song, stype, edit_name);
-		steps->SetDescription(edit_name);
+		if(lua_isstring(L, 5))
+		{
+			edit_name= SArg(5);
+		}
+		edit_name= SongUtil::MakeUniqueEditDescription(song, stype, edit_name);
+		new_steps->SetDifficulty(diff);
+		new_steps->SetDescription(edit_name);
 		song->AddSteps(new_steps);
 		p->m_pCurSong.Set(song);
-		p->m_pCurSteps[PLAYER_1].Set(steps);
+		p->m_pCurSteps[PLAYER_1].Set(new_steps);
 		p->SetCurrentStyle(GAMEMAN->GetEditorStyleForStepsType(
-				steps->m_StepsType), PLAYER_INVALID);
+				new_steps->m_StepsType), PLAYER_INVALID);
 		p->m_pCurCourse.Set(nullptr);
-		return 0;
+		new_steps->PushSelf(L);
+		return 1;
 	}
 
 	static int GetAutoGenFarg(T* p, lua_State *L)
@@ -3386,7 +3401,6 @@ public:
 		ADD_METHOD( InsertCredit );
 		ADD_METHOD( CurrentOptionsDisqualifyPlayer );
 		ADD_METHOD( ResetPlayerOptions );
-		ADD_METHOD( RefreshNoteSkinData );
 		ADD_METHOD( Dopefish );
 		ADD_METHOD( LoadProfiles );
 		ADD_METHOD( SaveProfiles );

@@ -212,6 +212,7 @@ PrefsManager::PrefsManager() :
 	m_bMercifulBeginner		( "MercifulBeginner",		false ),
 	m_bMercifulSuperMeter		( "MercifulSuperMeter",		true ),
 	m_bDelayedBack			( "DelayedBack",		true ),
+	m_AllowHoldForOptions("AllowHoldForOptions", true),
 	m_bShowInstructions		( "ShowInstructions",		true ),
 	m_bShowCaution			( "ShowCaution",		true ),
 	m_bShowNativeLanguage		( "ShowNativeLanguage",		true ),
@@ -272,6 +273,7 @@ PrefsManager::PrefsManager() :
 	m_bAnisotropicFiltering		( "AnisotropicFiltering",		false ),
 
 	m_bSignProfileData		( "SignProfileData",			false ),
+	m_WarnOnNoProfile("WarnOnNoProfile", true),
 	m_CourseSortOrder		( "CourseSortOrder",			COURSE_SORT_SONGS ),
 	m_bSubSortByNumSteps		( "SubSortByNumSteps",			false ),
 	m_GetRankingName		( "GetRankingName",			RANKING_ON ),

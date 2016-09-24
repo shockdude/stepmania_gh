@@ -40,7 +40,6 @@
 // StepMania global classes
 #include "ThemeManager.h"
 #include "NoteSkinManager.h"
-#include "NewSkinManager.h"
 #include "PrefsManager.h"
 #include "Song.h"
 #include "SongManager.h"
@@ -73,6 +72,7 @@
 #include "Profile.h"
 #include "ActorUtil.h"
 #include "ver.h"
+#include "RageFmtWrap.h"
 
 #if defined(WIN32)
 #include <windows.h>
@@ -758,7 +758,7 @@ RageDisplay *CreateDisplay()
 	std::string error = ERROR_INITIALIZING_CARD.GetValue()+"\n\n"+
 		ERROR_DONT_FILE_BUG.GetValue()+"\n\n"
 		VIDEO_TROUBLESHOOTING_URL "\n\n"+
-		fmt::sprintf(ERROR_VIDEO_DRIVER.GetValue(), GetVideoDriverName().c_str())+"\n\n";
+		rage_fmt_wrapper(ERROR_VIDEO_DRIVER, GetVideoDriverName().c_str())+"\n\n";
 
 	auto asRenderers = Rage::split( PREFSMAN->m_sVideoRenderers.Get(), ",", Rage::EmptyEntries::skip);
 
@@ -804,7 +804,7 @@ RageDisplay *CreateDisplay()
 		std::string sError = pRet->Init( params, PREFSMAN->m_bAllowUnacceleratedRenderer );
 		if( !sError.empty() )
 		{
-			error += fmt::sprintf(ERROR_INITIALIZING.GetValue(), sRenderer.c_str())+"\n" + sError;
+			error += rage_fmt_wrapper(ERROR_INITIALIZING, sRenderer.c_str())+"\n" + sError;
 			Rage::safe_delete( pRet );
 			error += "\n\n\n";
 			continue;
@@ -1095,7 +1095,6 @@ int sm_main(int argc, char* argv[])
 	THEME		= new ThemeManager;
 	ANNOUNCER	= new AnnouncerManager;
 	NOTESKIN	= new NoteSkinManager;
-	NEWSKIN= new NewSkinManager;
 
 	// Switch to the last used game type, and set up the theme and announcer.
 	SwitchToLastPlayedGame();
@@ -1411,7 +1410,7 @@ bool HandleGlobalInputs( const InputEventPlus &input )
 		{
 			// Shift+F2: refresh metrics,noteskin cache and CodeDetector cache only
 			THEME->ReloadMetrics();
-			NOTESKIN->RefreshNoteSkinData( GAMESTATE->m_pCurGame );
+			NOTESKIN->load_skins();
 			CodeDetector::RefreshCacheItems();
 			SCREENMAN->SystemMessage( RELOADED_METRICS.GetValue() );
 		}
@@ -1434,7 +1433,7 @@ bool HandleGlobalInputs( const InputEventPlus &input )
 			// F2 alone: refresh metrics, textures, noteskins, codedetector cache
 			THEME->ReloadMetrics();
 			TEXTUREMAN->ReloadAll();
-			NOTESKIN->RefreshNoteSkinData( GAMESTATE->m_pCurGame );
+			NOTESKIN->load_skins();
 			CodeDetector::RefreshCacheItems();
 			SCREENMAN->SystemMessage( RELOADED_METRICS_AND_TEXTURES.GetValue() );
 		}

@@ -14,6 +14,7 @@ list(APPEND FFMPEG_CONFIGURE
   "${SM_FFMPEG_CONFIGURE_EXE}"
   "--disable-programs"
   "--disable-doc"
+  "--disable-debug"
   "--disable-avdevice"
   "--disable-swresample"
   "--disable-postproc"
@@ -27,10 +28,10 @@ if(CMAKE_POSITION_INDEPENDENT_CODE)
 endif()
 
 if(MACOSX)
-  # TODO: Remove these two items when Mac OS X StepMania builds in 64-bit.
   list(APPEND FFMPEG_CONFIGURE
-    "--arch=i386"
-    "--cc=clang -m32"
+    "--arch=x86_64"
+    "--cc=clang -m64"
+    "--enable-sse"
   )
 endif()
 
@@ -51,9 +52,9 @@ if (NOT WITH_EXTERNAL_WARNINGS)
 endif()
 
 list(APPEND SM_FFMPEG_MAKE
-  "make"
+  $(MAKE)
 )
-if (WITH_FFMPEG_JOBS GREATER 1)
+if (WITH_FFMPEG_JOBS GREATER 0)
   list(APPEND SM_FFMPEG_MAKE "-j${WITH_FFMPEG_JOBS}")
 endif()
 

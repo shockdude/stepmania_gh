@@ -346,6 +346,15 @@ Screen *ScreenManager::GetTopScreen()
 	return g_ScreenStack[g_ScreenStack.size()-1].m_pScreen;
 }
 
+Screen* ScreenManager::GetSubTopScreen()
+{
+	if(g_ScreenStack.size() < 2)
+	{
+		return nullptr;
+	}
+	return g_ScreenStack[g_ScreenStack.size()-2].m_pScreen;
+}
+
 Screen *ScreenManager::GetScreen( int iPosition )
 {
 	if( iPosition >= (int) g_ScreenStack.size() )
@@ -837,6 +846,7 @@ void ScreenManager::PopTopScreen( ScreenMessage SM )
  * from inside a screen. */
 void ScreenManager::PopAllScreens()
 {
+	m_input_redirected.clear();
 	// Make sure only the top screen receives LoseFocus.
 	bool bFirst = true;
 	while( !g_ScreenStack.empty() )
@@ -968,8 +978,16 @@ public:
 		return 1;
 	}
 	static int SystemMessage( T* p, lua_State *L )		{ p->SystemMessage( SArg(1) ); COMMON_RETURN_SELF; }
-	static int ScreenIsPrepped( T* p, lua_State *L )	{ lua_pushboolean( L, ScreenManagerUtil::ScreenIsPrepped( SArg(1) ) ); return 1; }
-	static int ScreenClassExists( T* p, lua_State *L )	{ lua_pushboolean( L, g_pmapRegistrees->find( SArg(1) ) != g_pmapRegistrees->end() ); return 1; }
+	static int ScreenIsPrepped(T*, lua_State* L)
+	{
+		lua_pushboolean(L, ScreenManagerUtil::ScreenIsPrepped(SArg(1)));
+		return 1;
+	}
+	static int ScreenClassExists(T*, lua_State* L)
+	{
+		lua_pushboolean(L, g_pmapRegistrees->find(SArg(1)) != g_pmapRegistrees->end());
+		return 1;
+	}
 	static int AddNewScreenToTop( T* p, lua_State *L )
 	{
 		std::string screen= SArg(1);

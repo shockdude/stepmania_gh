@@ -17,6 +17,7 @@ extern "C"
 
 // For Dialog::Result
 #include "arch/Dialog/Dialog.h"
+#include "RageUtil.h"
 
 class LuaManager
 {
@@ -300,7 +301,19 @@ inline double get_optional_double(lua_State* L, int index, char const* field, do
 	lua_getfield(L, index, field);
 	if(lua_isnumber(L, -1))
 	{
-		ret= lua_tonumber(L, -1);
+		ret= static_cast<double>(lua_tonumber(L, -1));
+	}
+	lua_pop(L, 1);
+	return ret;
+}
+
+inline int get_optional_int(lua_State* L, int index, char const* field, int def)
+{
+	int ret= def;
+	lua_getfield(L, index, field);
+	if(lua_isnumber(L, -1))
+	{
+		ret= static_cast<int>(lua_tonumber(L, -1));
 	}
 	lua_pop(L, 1);
 	return ret;

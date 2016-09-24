@@ -291,6 +291,7 @@ void ActorFrame::DrawPrimitives()
 		m_DrawFunction.PushSelf( L );
 		if( lua_isnil(L, -1) )
 		{
+			LUA->Release(L);
 			LuaHelpers::ReportScriptErrorFmt( "Error compiling DrawFunction" );
 			return;
 		}
@@ -553,6 +554,7 @@ void ActorFrame::UpdateInternal( float fDeltaTime )
 		m_UpdateFunction.PushSelf( L );
 		if( lua_isnil(L, -1) )
 		{
+			LUA->Release(L);
 			LuaHelpers::ReportScriptErrorFmt( "Error compiling UpdateFunction" );
 			return;
 		}
@@ -595,6 +597,20 @@ PropagateActorFrameCommand1Param(HurryTweening, float);
 PropagateActorFrameCommand1Param(recursive_set_mask_color, Rage::Color);
 PropagateActorFrameCommand1Param(recursive_set_z_bias, float);
 PropagateActorFrameCommand1Param(SetState, size_t);
+
+void ActorFrame::set_counter_rotation(Actor* counter)
+{
+	TweenState& counter_dest= counter->DestTweenState();
+	float counter_x= counter_dest.rotation.x * -1.f;
+	float counter_y= counter_dest.rotation.y * -1.f;
+	float counter_z= counter_dest.rotation.z * -1.f;
+	for(auto&& sub : m_SubActors)
+	{
+		sub->SetRotationX(counter_x);
+		sub->SetRotationY(counter_y);
+		sub->SetRotationZ(counter_z);
+	}
+}
 
 
 float ActorFrame::GetTweenTimeLeft() const
@@ -705,6 +721,11 @@ public:
 	}
 	DEFINE_METHOD(GetUpdateRate, GetUpdateRate());
 	static int SetFOV( T* p, lua_State *L )				{ p->SetFOV( FArg(1) ); COMMON_RETURN_SELF; }
+	static int get_fov(T* p, lua_State* L)
+	{
+		lua_pushnumber(L, p->get_fov());
+		return 1;
+	}
 	static int vanishpoint( T* p, lua_State *L )			{ p->SetVanishPoint( FArg(1), FArg(2) ); COMMON_RETURN_SELF; }
 	static int GetChild( T* p, lua_State *L )
 	{
@@ -839,6 +860,7 @@ public:
 		ADD_METHOD( SetUpdateRate );
 		ADD_METHOD( GetUpdateRate );
 		ADD_METHOD( SetFOV );
+		ADD_METHOD(get_fov);
 		ADD_METHOD( vanishpoint );
 		ADD_METHOD( GetChild );
 		ADD_METHOD( GetChildren );

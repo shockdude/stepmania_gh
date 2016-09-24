@@ -120,9 +120,7 @@ nesty_cursor_mt= {
 					self.container= subself
 					self.left:horizalign(right)
 					self.right:horizalign(left)
-					if self.pn then
-						self:diffuse(PlayerColor(self.pn))
-					end
+					self:diffuse(PlayerColor(self.pn))
 				end,
 				LoadActor(THEME:GetPathG(params.parts_name, "Middle")) ..
 				{InitCommand= function(subself) self.middle= subself end},
@@ -131,7 +129,7 @@ nesty_cursor_mt= {
 				LoadActor(THEME:GetPathG(params.parts_name, "Right")) ..
 				{InitCommand= function(subself) self.right= subself end},
 			}
-			return frame;
+			return frame
 		end,
 		refit= function(self, nx, ny, nw, nh)
 			nx= nx or self.container:GetX()
@@ -273,9 +271,8 @@ local simple_item_mt= {
 }}
 
 local value_item_default_params= {
-	name= "", text_font= "Common Normal", text_on= noop_nil, text_width= .70,
-	value_font= "Common Normal", value_text_on= noop_nil,
-	value_image_on= noop_nil, value_width= .25,
+	name= "", text_font= "Common Normal", text_width= .70,
+	value_font= "Common Normal", value_width= .25,
 }
 local value_item_mt= {
 	__index= {
@@ -409,8 +406,18 @@ local value_item_mt= {
 		get_cursor_fit= function(self)
 			return {0, 0, self.width + 4, self.height + 4}
 		end,
-		gain_focus= play_gain_focus,
-		lose_focus= play_lose_focus,
+		gain_focus= function(self)
+			play_gain_focus(self)
+			if self.info and type(self.info.on_focus) == "function" then
+				self.info.on_focus()
+			end
+		end,
+		lose_focus= function(self)
+			play_lose_focus(self)
+			if self.info and type(self.info.on_unfocus) == "function" then
+				self.info.on_unfocus()
+			end
+		end,
 }}
 
 nesty_items= {
@@ -616,6 +623,30 @@ local general_menu_mt= {
 					self:get_cursor_element():gain_focus()
 					return true, false, "move_down"
 				end,
+				page_down= function(self)
+					if self.cursor_pos < #self.info_set then
+						unfocus_cursor(self)
+						self.cursor_pos= self.cursor_pos + self.display.scroller.num_items
+						if self.cursor_pos > #self.info_set then
+							self.cursor_pos= #self.info_set
+						end
+						self.display:scroll(self.cursor_pos)
+						self:get_cursor_element():gain_focus()
+					end
+					return true, false, "move_down"
+				end,
+				page_up= function(self)
+					if self.cursor_pos > 1 then
+						unfocus_cursor(self)
+						self.cursor_pos= self.cursor_pos - self.display.scroller.num_items
+						if self.cursor_pos < 1 then
+							self.cursor_pos= 1
+						end
+						self.display:scroll(self.cursor_pos)
+						self:get_cursor_element():gain_focus()
+					end
+					return true, false, "move_up"
+				end,
 				Start= function(self)
 					if self.info_set[self.cursor_pos].text == nesty_menu_up_element.text then
 						-- This position is the "up" element that moves the
@@ -695,6 +726,7 @@ nesty_option_menus.menu= {
 			else
 				self.menu_data= self.init_args
 			end
+			self.up_text= self.menu_data.up_text or self.up_text
 			self:insert_up(self.menu_data)
 			self.name= self.menu_data.name or ""
 			self.recall_init_on_pop= self.menu_data.recall_init_on_pop
@@ -754,6 +786,8 @@ nesty_option_menus.menu= {
 					end
 					self.info_set[disp_slot].translatable= data.translatable
 					self.info_set[disp_slot].translatable_value= data.translatable_value
+					self.info_set[disp_slot].on_focus= data.on_focus
+					self.info_set[disp_slot].on_unfocus= data.on_unfocus
 					if data.args and type(data.args) == "table" then
 						data.args.name= data.name
 					end
@@ -1129,7 +1163,7 @@ nesty_menu_stack_mt= {
 				el_width= disp_el_width_limit, el_height= self.el_height,
 				el_zoom= self.zoom, height= params.height, no_heading= false,
 				no_display= false, el_height= params.el_height,
-				item_mt= option_item_underlinable_mt})
+				item_mt= nesty_items.value})
 			for i, disp in ipairs(self.displays) do
 				local sub_params= DeepCopy(params.display_params)
 				sub_params.name= "disp" .. i
@@ -1399,6 +1433,12 @@ local function float_val_func(min_scale, get)
 end
 
 nesty_options= {
+	submenu= function(name, items)
+		local ret= {
+			name= name, translatable= true, menu= nesty_option_menus.menu, args= items,
+		}
+		return setmetatable(ret, mergable_table_mt)
+	end,
 	float_pref_val= function(valname, min_scale, scale, max_scale, val_min, val_max, val_reset)
 		local ret= {
 			name= valname, translatable= true,
@@ -1415,6 +1455,18 @@ nesty_options= {
 				end,
 		}}
 		ret.value= float_val_func(min_scale, ret.args.initial_value)
+		return setmetatable(ret, mergable_table_mt)
+	end,
+	bool_pref_val= function(valname)
+		local ret= {
+			type= "bool", name= valname, translatable= true, execute= function()
+				local old_val= PREFSMAN:GetPreference(valname)
+				PREFSMAN:SetPreference(valname, not old_val)
+			end,
+			value= function()
+				return PREFSMAN:GetPreference(valname)
+			end,
+		}
 		return setmetatable(ret, mergable_table_mt)
 	end,
 	float_song_mod_val= function(valname, min_scale, scale, max_scale, val_min, val_max, val_reset)
@@ -1650,7 +1702,8 @@ nesty_options= {
 			name= field_name, translatable= true, execute= function(pn)
 				local old_val= get_element_by_path(conf:get_data(pn), field_name)
 				conf:set_dirty(pn)
-				set_element_by_path(conf:get_data(pn), field_name, not old_val)
+				local new_val= not old_val
+				set_element_by_path(conf:get_data(pn), field_name, new_val)
 				MESSAGEMAN:Broadcast("ConfigValueChanged", {
 					config_name= conf.name, field_name= field_name, value= new_val, pn= pn})
 			end,
@@ -1678,5 +1731,57 @@ nesty_options= {
 			end,
 		}
 		return setmetatable(ret, mergable_table_mt)
+	end,
+	float_table_val= function(table_name, tab, field_name, mins, scale, maxs, val_min, val_max)
+		return setmetatable({
+				name= field_name, translatable= true,
+				menu= nesty_option_menus.adjustable_float, args= {
+					name= field_name, min_scale= mins, scale= scale, max_scale= maxs,
+					val_min= val_min, val_max= val_max,
+					reset_value= get_element_by_path(tab, field_name),
+					initial_value= function()
+						return get_element_by_path(tab, field_name) or 0
+					end,
+					set= function(pn, value)
+						set_element_by_path(tab, field_name, value)
+						MESSAGEMAN:Broadcast(
+							"ConfigValueChanged", {table_name= table_name, field_name= field_name, value= value})
+					end,
+				},
+				value= function()
+					return get_element_by_path(tab, field_name)
+				end,
+												}, mergable_table_mt)
+	end,
+	bool_table_val= function(table_name, tab, field_name)
+		return setmetatable({
+				type= "bool", name= field_name, translatable= true, execute= function()
+					local old_val= get_element_by_path(tab, field_name)
+					set_element_by_path(tab, field_name, not old_val)
+					MESSAGEMAN:Broadcast(
+						"ConfigValueChanged", {table_name= table_name, field_name= field_name, value= value})
+				end,
+				value= function()
+					return get_element_by_path(tab, field_name)
+				end,
+												}, mergable_table_mt)
+	end,
+	choices_table_val= function(table_name, tab, field_name, choices)
+		return setmetatable({
+				name= field_name, translatable= true,
+				menu= nesty_option_menus.enum_option, args= {
+					name= field_name, enum= choices, fake_enum= true,
+					obj_get= function() return tab end,
+					get= function(pn, obj) return get_element_by_path(obj, field_name) end,
+					set= function(pn, obj, value)
+						set_element_by_path(obj, field_name, value)
+						MESSAGEMAN:Broadcast(
+							"ConfigValueChanged", {table_name= table_name, field_name= field_name, value= value})
+					end,
+				},
+				value= function()
+					return get_element_by_path(tab, field_name)
+				end,
+												}, mergable_table_mt)
 	end,
 }

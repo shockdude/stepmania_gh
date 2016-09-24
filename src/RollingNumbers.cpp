@@ -67,10 +67,6 @@ void RollingNumbers::SetTargetNumber(float target_number)
 void RollingNumbers::UpdateText()
 {
 	std::string s = fmt::sprintf(m_text_format, m_current_number);
-	if(m_commify)
-	{
-		s = Commify(s);
-	}
 	size_t number_text_width= s.size();
 	size_t chars_wide= static_cast<size_t>(m_chars_wide);
 	if(m_chars_wide <= 0)
@@ -87,10 +83,15 @@ void RollingNumbers::UpdateText()
 		to_join.push_back(s);
 		s = Rage::join("", to_join);
 	}
+	if(m_commify)
+	{
+		s = Commify(s);
+		number_text_width+= (number_text_width - 1) / 3;
+	}
+	int pad_width= s.size() - number_text_width;
 	SetText(s);
 	ClearAttributes();
-	int width_diff= chars_wide - number_text_width;
-	m_leading_text_attr.length= std::max(0, width_diff);
+	m_leading_text_attr.length= std::max(0, pad_width);
 	if(m_leading_glyph.empty())
 	{
 		m_leading_text_attr.length= 0;
@@ -122,7 +123,12 @@ struct LunaRollingNumbers : Luna<RollingNumbers>
 	}
 	static int target_number(T* p, lua_State *L)
 	{
-		p->SetTargetNumber(FArg(1));
+		float target= FArg(1);
+		if(!std::isfinite(target))
+		{
+			luaL_error(L, "RollingNumbers: Invalid non-finite target number.");
+		}
+		p->SetTargetNumber(target);
 		COMMON_RETURN_SELF;
 	}
 
