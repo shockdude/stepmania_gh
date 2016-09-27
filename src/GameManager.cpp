@@ -3151,8 +3151,8 @@ static const AutoMappings g_AutoKeyMappings_Guitar = AutoMappings (
 );
 
 // The strum bar is always the last column, so for a guitar game with 6 frets, strum would be the seventh column
-static const int GUITAR_COL_SPACING = 52;
-static const int GUITAR6_COL_SPACING = 72;
+// static const int GUITAR_COL_SPACING = 52;
+// static const int GUITAR6_COL_SPACING = 72;
 
 static const Style g_Style_Guitar_Solo =
 {	// STYLE_GUITAR_SOLO
@@ -3166,20 +3166,20 @@ static const Style g_Style_Guitar_Solo =
    6,				// m_iColsPerPlayer
    {	// m_ColumnInfo[NUM_PLAYERS][MAX_COLS_PER_PLAYER];
       {	// PLAYER_1
-         { TRACK_1,	-GUITAR_COL_SPACING*2.0f, NULL },
-         { TRACK_2,	-GUITAR_COL_SPACING*1.0f, NULL },
-         { TRACK_3,	+GUITAR_COL_SPACING*0.0f, NULL },
-         { TRACK_4,	+GUITAR_COL_SPACING*1.0f, NULL },
-         { TRACK_5,	+GUITAR_COL_SPACING*2.0f, NULL },
-         { TRACK_6,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_1,	nullptr },
+         { TRACK_2,	nullptr },
+         { TRACK_3,	nullptr },
+         { TRACK_4,	nullptr },
+         { TRACK_5,	nullptr },
+         { TRACK_6,	nullptr },
       },
       {	// PLAYER_2
-         { TRACK_1,	-GUITAR_COL_SPACING*2.0f, NULL },
-         { TRACK_2,	-GUITAR_COL_SPACING*1.0f, NULL },
-         { TRACK_3,	+GUITAR_COL_SPACING*0.0f, NULL },
-         { TRACK_4,	+GUITAR_COL_SPACING*1.0f, NULL },
-         { TRACK_5,	+GUITAR_COL_SPACING*2.0f, NULL },
-         { TRACK_6,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_1,	nullptr },
+         { TRACK_2,	nullptr },
+         { TRACK_3,	nullptr },
+         { TRACK_4,	nullptr },
+         { TRACK_5,	nullptr },
+         { TRACK_6,	nullptr },
       },
    },
    {	// m_iInputColumn[NUM_GameController][NUM_GameButton]
@@ -3205,20 +3205,20 @@ static const Style g_Style_Guitar_Versus =
    6,				// m_iColsPerPlayer
    {	// m_ColumnInfo[NUM_PLAYERS][MAX_COLS_PER_PLAYER];
       {	// PLAYER_1
-         { TRACK_1,	-GUITAR_COL_SPACING*2.0f, NULL },
-         { TRACK_2,	-GUITAR_COL_SPACING*1.0f, NULL },
-         { TRACK_3,	+GUITAR_COL_SPACING*0.0f, NULL },
-         { TRACK_4,	+GUITAR_COL_SPACING*1.0f, NULL },
-         { TRACK_5,	+GUITAR_COL_SPACING*2.0f, NULL },
-         { TRACK_6,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_1,	nullptr },
+         { TRACK_2,	nullptr },
+         { TRACK_3,	nullptr },
+         { TRACK_4,	nullptr },
+         { TRACK_5,	nullptr },
+         { TRACK_6,	nullptr },
       },
       {	// PLAYER_2
-         { TRACK_1,	-GUITAR_COL_SPACING*2.0f, NULL },
-         { TRACK_2,	-GUITAR_COL_SPACING*1.0f, NULL },
-         { TRACK_3,	+GUITAR_COL_SPACING*0.0f, NULL },
-         { TRACK_4,	+GUITAR_COL_SPACING*1.0f, NULL },
-         { TRACK_5,	+GUITAR_COL_SPACING*2.0f, NULL },
-         { TRACK_6,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_1,	nullptr },
+         { TRACK_2,	nullptr },
+         { TRACK_3,	nullptr },
+         { TRACK_4,	nullptr },
+         { TRACK_5,	nullptr },
+         { TRACK_6,	nullptr },
       },
    },
    {	// m_iInputColumn[NUM_GameController][NUM_GameButton]
@@ -3245,20 +3245,20 @@ static const Style g_Style_Guitar_Group =
    6,				// m_iColsPerPlayer
    {	// m_ColumnInfo[NUM_PLAYERS][MAX_COLS_PER_PLAYER];
       {	// PLAYER_1
-         { TRACK_1,	-GUITAR_COL_SPACING*2.0f, NULL },
-         { TRACK_2,	-GUITAR_COL_SPACING*1.0f, NULL },
-         { TRACK_3,	+GUITAR_COL_SPACING*0.0f, NULL },
-         { TRACK_4,	+GUITAR_COL_SPACING*1.0f, NULL },
-         { TRACK_5,	+GUITAR_COL_SPACING*2.0f, NULL },
-         { TRACK_6,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_1,	nullptr },
+         { TRACK_2,	nullptr },
+         { TRACK_3,	nullptr },
+         { TRACK_4,	nullptr },
+         { TRACK_5,	nullptr },
+         { TRACK_6,	nullptr },
       },
       {	// PLAYER_2
-         { TRACK_1,	-GUITAR_COL_SPACING*2.0f, NULL },
-         { TRACK_2,	-GUITAR_COL_SPACING*1.0f, NULL },
-         { TRACK_3,	+GUITAR_COL_SPACING*0.0f, NULL },
-         { TRACK_4,	+GUITAR_COL_SPACING*1.0f, NULL },
-         { TRACK_5,	+GUITAR_COL_SPACING*2.0f, NULL },
-         { TRACK_6,	+GUITAR_COL_SPACING*0.0f, NULL },
+         { TRACK_1,	nullptr },
+         { TRACK_2,	nullptr },
+         { TRACK_3,	nullptr },
+         { TRACK_4,	nullptr },
+         { TRACK_5,	nullptr },
+         { TRACK_6,	nullptr },
       },
    },
    {	// m_iInputColumn[NUM_GameController][NUM_GameButton]
@@ -3287,22 +3287,22 @@ static const Style g_Style_Guitar_Solo6 =
    7,				// m_iColsPerPlayer
    {	// m_ColumnInfo[NUM_PLAYERS][MAX_COLS_PER_PLAYER];
       {	// PLAYER_1
-         { TRACK_1,	-GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_2,	+GUITAR6_COL_SPACING*0.0f, NULL },
-         { TRACK_3,	+GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_4,	-GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_5,	+GUITAR6_COL_SPACING*0.0f, NULL },
-         { TRACK_6,	+GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_7,	+GUITAR6_COL_SPACING*0.0f, NULL },
+         { TRACK_1,	nullptr },
+         { TRACK_2,	nullptr },
+         { TRACK_3,	nullptr },
+         { TRACK_4,	nullptr },
+         { TRACK_5,	nullptr },
+         { TRACK_6,	nullptr },
+         { TRACK_7,	nullptr },
       },
       {	// PLAYER_2
-         { TRACK_1,	-GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_2,	+GUITAR6_COL_SPACING*0.0f, NULL },
-         { TRACK_3,	+GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_4,	-GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_5,	+GUITAR6_COL_SPACING*0.0f, NULL },
-         { TRACK_6,	+GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_7,	+GUITAR6_COL_SPACING*0.0f, NULL },
+         { TRACK_1,	nullptr },
+         { TRACK_2,	nullptr },
+         { TRACK_3,	nullptr },
+         { TRACK_4,	nullptr },
+         { TRACK_5,	nullptr },
+         { TRACK_6,	nullptr },
+         { TRACK_7,	nullptr },
       },
    },
    {	// m_iInputColumn[NUM_GameController][NUM_GameButton]
@@ -3328,22 +3328,22 @@ static const Style g_Style_Guitar_Group6 =
    7,				// m_iColsPerPlayer
    {	// m_ColumnInfo[NUM_PLAYERS][MAX_COLS_PER_PLAYER];
       {	// PLAYER_1
-         { TRACK_1,	-GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_2,	+GUITAR6_COL_SPACING*0.0f, NULL },
-         { TRACK_3,	+GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_4,	-GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_5,	+GUITAR6_COL_SPACING*0.0f, NULL },
-         { TRACK_6,	+GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_7,	+GUITAR6_COL_SPACING*0.0f, NULL },
+         { TRACK_1,	nullptr },
+         { TRACK_2,	nullptr },
+         { TRACK_3,	nullptr },
+         { TRACK_4,	nullptr },
+         { TRACK_5,	nullptr },
+         { TRACK_6,	nullptr },
+         { TRACK_7,	nullptr },
       },
       {	// PLAYER_2
-         { TRACK_1,	-GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_2,	+GUITAR6_COL_SPACING*0.0f, NULL },
-         { TRACK_3,	+GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_4,	-GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_5,	+GUITAR6_COL_SPACING*0.0f, NULL },
-         { TRACK_6,	+GUITAR6_COL_SPACING*1.25f, NULL },
-         { TRACK_7,	+GUITAR6_COL_SPACING*0.0f, NULL },
+         { TRACK_1,	nullptr },
+         { TRACK_2,	nullptr },
+         { TRACK_3,	nullptr },
+         { TRACK_4,	nullptr },
+         { TRACK_5,	nullptr },
+         { TRACK_6,	nullptr },
+         { TRACK_7,	nullptr },
       },
    },
    {	// m_iInputColumn[NUM_GameController][NUM_GameButton]

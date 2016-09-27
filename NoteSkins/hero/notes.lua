@@ -1,21 +1,24 @@
 local skin_name= Var("skin_name")
+-- Thank you Kyzentun for your continual improvements to the newskins
 return function(button_list, stepstype)
 	local tap_redir= {
-		Fret1= "White", Fret2= "White", Fret3= "White", Fret4= "Black", 
-		Fret5= "Black", Fret6= "Black", StrumDown= "Strum"
+		Fret1= "Fret1", Fret2= "Fret2", Fret3= "Fret3", Fret4= "Fret4", 
+		Fret5= "Fret5", Fret6= "Fret1", StrumDown= "Strum", Left= "Fret1",
+		Down= "Fret2", Up= "Fret3", Right= "Fret4"
 	}
 	local tap_width= {
-		-- spacing is especially weird due to how the columns are supposed to line up
-		Fret1= 36, Fret2= 36, Fret3= 36, Fret4= 36, 
-		Fret5= 36, Fret6= 36, StrumDown= 1
+		Fret1= 52, Fret2= 52, Fret3= 52, Fret4= 52, 
+		Fret5= 52, Fret6= 52, StrumDown= 260, Left= 58,
+		Down= 58, Up= 58, Right= 58
 	}
 	local hold_redir= {
 		Fret1= "Fret", Fret2= "Fret", Fret3= "Fret", Fret4= "Fret", 
-		Fret5= "Fret", Fret6= "Fret", StrumDown= "Strum"
+		Fret5= "Fret", Fret6= "Fret", StrumDown= "Strum", Left= "Fret",
+		Down= "Fret", Up= "Fret", Right= "Fret"
 	}
-	local col_position= {
-		Fret1= -72, Fret2= 0, Fret3= 72, Fret4= -72, 
-		Fret5= 0, Fret6= 72, StrumDown= 0
+	local x_reposition= {
+		Fret1= -104, Fret2= -52, Fret3= 0, Fret4= 52, Fret5= 104, StrumDown= 0,
+		Left= -87, Down= -29, Up= 29, Right= 87
 	}
 	local parts_per_beat= 48
 	local tap_state_map= {
@@ -53,33 +56,34 @@ return function(button_list, stepstype)
 	}
 	local columns= {}
 	for i, button in ipairs(button_list) do
-		local hold_tex= hold_redir[button].." Hold 2x1.png"
-		local roll_tex= hold_redir[button].." Roll 2x1.png"
+		local hold_tex= tap_redir[button].." Hold 2x1.png"
+		local roll_tex= tap_redir[button].." Roll 2x1.png"
 		columns[i]= {
 			width= tap_width[button],
 			anim_time= 1,
 			anim_uses_beats= true,
 			padding= 0,
-			-- new thing to line up columns
-			custom_x= col_position[button],
+			custom_x= x_reposition[button],
+			hold_gray_percent= .25,
+			use_hold_heads_for_taps_on_row= false,
 			taps= {
-				NewSkinTapPart_Tap= {
+				NoteSkinTapPart_Tap= {
 					state_map= tap_state_map,
 					actor= Def.Sprite{Texture= tap_redir[button].." Tap Note.png",
 					InitCommand= function(self) self:rotationz(0) end}
 					},
-				NewSkinTapPart_Mine= {
+				NoteSkinTapPart_Mine= {
 					state_map= mine_state_map,
-					actor= Def.Sprite{Texture= "mine.png"}},
-				NewSkinTapPart_Lift= { -- fuck lifts
+					actor= Def.Sprite{Texture= "mine"}},
+				NoteSkinTapPart_Lift= { -- fuck lifts
 					state_map= lift_state_map,
 					actor= Def.Sprite{Texture= tap_redir[button].." Tap HOPO.png",
 						InitCommand= function(self) self:rotationz(0) end}},
-				NewSkinTapPart_Gem= {
+				NoteSkinTapPart_Gem= {
 					state_map= tap_state_map,
 					actor= Def.Sprite{Texture= tap_redir[button].." Tap Gem.png",
 						InitCommand= function(self) self:rotationz(0) end}},
-				NewSkinTapPart_HOPO= {
+				NoteSkinTapPart_HOPO= {
 					state_map= lift_state_map,
 					actor= Def.Sprite{Texture= tap_redir[button].." Tap HOPO.png",
 						InitCommand= function(self) self:rotationz(0) end}},
@@ -89,13 +93,13 @@ return function(button_list, stepstype)
 					{
 						state_map= inactive_state_map,
 						textures= {hold_tex},
-						flip= TexCoordFlipMode_None,
+						flip= "TexCoordFlipMode_None",
 						length_data= hold_length,
 					},
 					{
 						state_map= active_state_map,
 						textures= {hold_tex},
-						flip= TexCoordFlipMode_None,
+						flip= "TexCoordFlipMode_None",
 						length_data= hold_length,
 					},
 				},
@@ -103,48 +107,19 @@ return function(button_list, stepstype)
 					{
 						state_map= inactive_state_map,
 						textures= {roll_tex},
-						flip= TexCoordFlipMode_None,
+						flip= "TexCoordFlipMode_None",
 						length_data= hold_length,
 					},
 					{
 						state_map= active_state_map,
 						textures= {roll_tex},
-						flip= TexCoordFlipMode_None,
-						length_data= hold_length,
-					},
-				},
-			},
-			reverse_holds= {
-				TapNoteSubType_Hold= {
-					{
-						state_map= inactive_state_map,
-						textures= {hold_tex},
-						flip= TexCoordFlipMode_None,
-						length_data= hold_length,
-					},
-					{
-						state_map= active_state_map,
-						textures= {hold_tex},
-						flip= TexCoordFlipMode_None,
-						length_data= hold_length,
-					},
-				},
-				TapNoteSubType_Roll= {
-					{
-						state_map= inactive_state_map,
-						textures= {roll_tex},
-						flip= TexCoordFlipMode_None,
-						length_data= hold_length,
-					},
-					{
-						state_map= active_state_map,
-						textures= {roll_tex},
-						flip= TexCoordFlipMode_None,
+						flip= "TexCoordFlipMode_None",
 						length_data= hold_length,
 					},
 				},
 			},
 		}
+		columns[i].reverse_holds= columns[i].holds
 	end
 	return {
 		columns= columns,

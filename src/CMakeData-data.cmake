@@ -63,6 +63,7 @@ source_group("Data Structures\\\\Note Data" FILES ${SM_DATA_NOTEDATA_SRC} ${SM_D
 list(APPEND SM_DATA_NOTELOAD_SRC
   "NotesLoader.cpp"
   "NotesLoaderBMS.cpp"
+  "NotesLoaderCHART.cpp"
   "NotesLoaderDWI.cpp"
   "NotesLoaderJson.cpp"
   "NotesLoaderKSF.cpp"
@@ -74,6 +75,7 @@ list(APPEND SM_DATA_NOTELOAD_SRC
 list(APPEND SM_DATA_NOTELOAD_HPP
   "NotesLoader.h"
   "NotesLoaderBMS.h"
+  "NotesLoaderCHART.h"
   "NotesLoaderDWI.h"
   "NotesLoaderJson.h"
   "NotesLoaderKSF.h"

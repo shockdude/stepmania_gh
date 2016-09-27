@@ -238,6 +238,14 @@ return function(button_list, stepstype, skin_parameters)
 					actor= Def.Sprite{Texture= "tap_note",
 						-- Use the InitCommand to rotate the arrow appropriately.
 						InitCommand= function(self) self:rotationz(rots[button]) end}},
+				NoteSkinTapPart_Gem= {
+					state_map= tap_state_map,
+					actor= Def.Sprite{Texture= "tap_note",
+						InitCommand= function(self) self:rotationz(rots[button]) end}},
+				NoteSkinTapPart_HOPO= {
+					state_map= lift_state_map,
+					actor= Def.Sprite{Texture= "tap_note",
+						InitCommand= function(self) self:rotationz(rots[button]) end}},
 				NoteSkinTapPart_Mine= {
 					state_map= mine_state_map,
 					actor= Def.Sprite{Texture= "mine",}},

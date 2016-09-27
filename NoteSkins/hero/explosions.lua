@@ -2,24 +2,21 @@ return function(button_list, stepstype, skin_params)
 	local ret= {}
 	local tap_redir= {
 		Fret1= "Fret", Fret2= "Fret", Fret3= "Fret", Fret4= "Fret", 
-		Fret5= "Fret", Fret6= "Fret", StrumDown= "Strum"
-	}
-	local x_reposition= {
-		Fret1= 18, Fret2= 54, Fret3= 90, Fret4= -90, 
-		Fret5= -54, Fret6= -18, StrumDown= -108
+		Fret5= "Fret", Fret6= "Fret", StrumDown= "Strum", Left= "Fret",
+		Down= "Fret", Up= "Fret", Right= "Fret"
 	}
 	for i, button in ipairs(button_list) do
 		local column_frame= Def.ActorFrame{
 			InitCommand= function(self)
 				self:rotationz(0)
-					:draworder(newfield_draw_order.explosion)
+					:draworder(notefield_draw_order.explosion)
 			end,
 			WidthSetCommand= function(self, param)
 				param.column:set_layer_fade_type(self, "FieldLayerFadeType_Explosion")
 			end,
 			Def.ActorFrame{
 				Def.Sprite{
-					Texture= tap_redir[button].." Tap Explosion Dim.png",
+					Texture= tap_redir[button].." Tap Explosion Dim",
 					ColumnJudgmentCommand= function(self, param)
 						if param.bright then
 							self:visible(false)
@@ -36,7 +33,7 @@ return function(button_list, stepstype, skin_params)
 					end,
 				},
 				Def.Sprite{
-					Texture= tap_redir[button].." Tap Explosion Bright.png",
+					Texture= tap_redir[button].." Tap Explosion Bright",
 					ColumnJudgmentCommand= function(self, param)
 						if param.bright then
 							self:visible(true)
@@ -78,7 +75,7 @@ return function(button_list, stepstype, skin_params)
 				end,
 			},
 			Def.Sprite{
-				Texture= tap_redir[button].." Hold Explosion 2x1.png", InitCommand= function(self)
+				Texture= tap_redir[button].." Hold Explosion", InitCommand= function(self)
 					self:visible(false):SetAllStateDelays(.1)
 				end,
 				HoldCommand= function(self, param)
