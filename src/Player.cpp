@@ -2524,6 +2524,17 @@ void Player::Step( int col, int row, const RageTimer &tm, bool bHeld, bool bRele
 		}
 	}
 
+   // To stop strum spam
+   // TODO: rework step() so grading per note is a separate function call*****************************************************
+   // special calls to the function with guitar mode
+   // basically all note scoring goes into the new function
+   // If step() is called (and it's not guitar mode) call the function normally once
+   // If guitar mode, call the function with a special flag for hopos
+   // or be smart about it, see if the upcoming note is single or a chord,
+   // then call the function only as necessary
+   // no penalty for extra fret presses, but penalties for strum spam
+   // see if that problem with multiple close presses can be fixed
+   
 	if( score == TNS_None )
 		DoTapScoreNone(!bHeld && !bRelease);
 
