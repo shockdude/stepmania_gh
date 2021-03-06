@@ -1991,7 +1991,10 @@ int Player::DoFretLogic( int col, bool bRelease )
       }
       
       // Set flag to grade hopo
-      retCode |= 1;
+	  // no HOPO for autoplay
+	  if (m_pPlayerState->m_PlayerController == PC_HUMAN) {
+		  retCode |= 1;
+	  }
    }
    
    // if strum was hit
@@ -2965,6 +2968,7 @@ void Player::CrossedRows( int iLastRowCrossed, const RageTimer &now )
 
 	NoteData::all_tracks_iterator &iter = *m_pIterUncrossedRows;
 	int iLastSeenRow = -1;
+	bool hasGem = false;
 	for( ; !iter.IsAtEnd()  &&  iter.Row() <= iLastRowCrossed; ++iter )
 	{
 		// Apply InitialHoldLife.
@@ -3040,7 +3044,9 @@ void Player::CrossedRows( int iLastRowCrossed, const RageTimer &now )
 				tn.result.tns == TNS_None &&
 				this->m_Timing->IsJudgableAtRow(iRow) )
 			{
-				Step( iTrack, iRow, now, false, false );
+				Step(iTrack, iRow, now, false, false);
+				hasGem = true;
+
 				if( m_pPlayerState->m_PlayerController == PC_AUTOPLAY )
 				{
 					if( m_pPlayerStageStats )
@@ -3072,6 +3078,15 @@ void Player::CrossedRows( int iLastRowCrossed, const RageTimer &now )
 		}
 	}
 
+	if (hasGem && m_iStrumCol != -1) {
+		// auto strum
+		Step(m_iStrumCol, iLastSeenRow, now, false, false);
+		// release all frets
+		for (int iTrack = 0; iTrack < m_NoteData.GetNumTracks(); ++iTrack)
+		{
+			Step(iTrack, iLastSeenRow, now, false, true);
+		}
+	}
 
 	/* Update hold checkpoints
 	 *
